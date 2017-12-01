@@ -1,0 +1,714 @@
+%{
+	#include <iostream>
+	#include <stdlib.h>
+	#include "attributes.h"
+	#include "output.hpp"
+	#include <stdio.h>
+	#include <stack> 
+	#include <list> 
+	#include <sstream>
+	#include <iostream>
+
+	typedef struct  {
+		string name;
+		TYPE type;
+		int offset;
+		list<TYPE> params;  // only used for functions
+		TYPE retType ; 		// only used for functions
+	}listEntry;
+	
+	list<list<listEntry> > vartable;
+	stack<int> offsets;
+	 char* intPointer="INT";
+	 char* boolPointer="BOOL";
+	 char* bytePointer="BYTE";
+	 char* stringPointer="STRING";
+
+	
+	int insert(list< list<listEntry> >& vartable,listEntry& values);
+	int isExist(list<list<listEntry> > & table , string varName);
+	listEntry get_exists_variable(list<list<listEntry> > & table , string varName);
+	TYPE getTypeFromVarTable(list<list<listEntry> > & table , string varName);
+	//static int case_state = 0; 	
+	void CreateScope();
+	void DestroyScope();
+
+	using namespace std;
+	using namespace output;
+	extern int yylineno;
+	//extern FILE * yyin ;
+	extern int yylex();
+	int yyerror(char * message);
+	bool isLegalCoersion(TYPE type1,TYPE type2);
+	
+	
+	
+	//void AssetBoolType(Type type,int lineno);
+	void printTable(const list<listEntry> &  table);
+	void printLentry(const listEntry & values);
+	
+	//---------------------------------------------------
+	std::vector<const char*> ListToVector(const list<TYPE>  list );
+	bool checkFuncArgs(list<TYPE> decleration,list<TYPE> callparams);
+	static TYPE RetCheck = A_UNDEFINED;
+	static int while_num = 0;
+	static int last_statement_condition = 0;
+	static int params_num =0;
+	
+	std::string operator+(std::string const &a, int b);
+	
+	int insertParam(list< list<listEntry> >& vartable,listEntry& values);
+	
+	bool updateFuncParams(list< list<listEntry> >& vartable,listEntry& values);
+	list<TYPE> getParamsFromRecentScope();
+	int checkIfNumericTypes(TYPE type1 , TYPE type2 );
+	void checkBoolTypes(TYPE type1,TYPE type2);
+	
+	int insertFunc(list< list<listEntry> >& vartable,listEntry& values);
+	
+	void printOk(const char* str);
+ 
+	
+	// remained id , call , if ..
+	// variable with name print..
+%}
+
+%left AND
+%left OR
+%left RELOP
+%left BINOP
+
+
+%token VOID
+%token INT
+%token BYTE
+%token B
+%token BOOL
+
+%right NOT
+%token TRUE
+%token FALSE
+%token RETURN
+%token IF
+
+%token WHILE
+%token SWITCH
+%token CASE
+%token BREAK
+%token COLON
+%token SC
+%token COMMA
+%token LPAREN
+%nonassoc RPAREN
+%token LBRACE
+%token RBRACE
+%token ASSIGN
+
+
+%token NUM
+%token ID
+%token STRING
+
+%nonassoc ELSE
+
+
+%%
+
+Prog :{vartable =list<list<listEntry> >();offsets =stack<int>(); CreateScope();last_statement_condition=0;printOk("started\n");} Funcs {
+		if(isExist(vartable,string("main"))!= 1){
+			errorMainMissing();
+			exit(1);
+		}
+		listEntry entry =  get_exists_variable(vartable,"main");
+		if((entry.retType != A_VOID) || (entry.params.size() != 0)){
+			errorMainMissing();
+			exit(1);
+		}
+		DestroyScope();
+	}
+	
+Funcs : FuncDel Funcs {/*std::cout << "not epsilopn" << std::endl;*/}
+		| { /*std::cout << "epsilopn" << std::endl;*/};
+FuncDel : RetType ID {
+				printOk("function start \n");
+				if(isExist(vartable,$2.name) ==1)
+					{
+						errorDef(yylineno,$2.name.c_str());
+						exit(1);
+					}
+				listEntry entry = {$2.name,A_FUNC,0,list<TYPE>(),A_UNDEFINED};
+				if(insertFunc(vartable,entry) != 0){
+					errorDef(yylineno,$2.name.c_str());
+					exit(1);
+				}
+				CreateScope();
+				RetCheck=$1.type;
+				params_num=0;
+			} 
+			LPAREN Formals RPAREN {
+				printOk("function middle 1\n");
+				//printTable(vartable.front());
+				printOk("function middle 1 print done\n");
+				/*if(($2.name == string("main")) &&(($1.type != A_VOID)) ){  // fixme : $5.size doesn't exist any more
+					printOk("function middle 2\n");
+					errorPrototypeMismatch(yylineno,$2.name.c_str(),std::vector<const char*>());
+					exit(1);
+				}*/
+				printOk("function middle 3\n");
+				listEntry entry = {$2.name,A_FUNC,0,getParamsFromRecentScope(),$1.type};
+				printOk("function middle 4\n");
+				if(updateFuncParams(vartable,entry) != true){
+					printOk("function middle 5\n");
+					std::cout << "error in FuncDel " << std::endl;
+					exit(1);
+				}
+				printOk("function middle 6\n");
+			} LBRACE statements RBRACE {
+			printOk("function end 1\n");
+			RetCheck = A_UNDEFINED;
+			DestroyScope();
+			printOk("function end 2\n");
+		}
+RetType : Type {$$.type = $1.type; /*std::cout << "reached type"<<std::endl;*/}
+		| VOID  {$$.type = A_VOID;}
+		
+Formals : FormalsList {$$.params = $1.params;}
+		| ;
+		
+FormalsList :{params_num--;} FormalDecl {
+			listEntry entry = {$2.name,$2.type,params_num,list<TYPE>(),A_UNDEFINED};  //fixme : params order
+			if(insertParam(vartable,entry) != 0){
+				errorDef(yylineno,$2.name.c_str());
+				exit(1);
+				}
+			} FormalListContinue
+		
+
+FormalListContinue : COMMA FormalsList
+					|;
+			
+FormalDecl : Type ID {$$.type = $1.type;$$.name = $2.name;}
+
+ 
+
+statements : statements statement 
+			| statement
+
+statement :   LBRACE {CreateScope();last_statement_condition=0;} statements RBRACE {DestroyScope();}
+			| Type ID SC { 	
+							if(last_statement_condition == 1){
+								CreateScope();
+							}
+							listEntry entry = {$2.name,$1.type,offsets.top(),list<TYPE>(),A_UNDEFINED};  
+							if((insert(vartable,entry) != 0)){
+								errorDef(yylineno,$2.name.c_str());
+								exit(1);
+							}
+							if(last_statement_condition ==1){
+								DestroyScope();
+							}
+						}
+			| Type ID ASSIGN Exp SC { 
+							if(last_statement_condition == 1){
+								CreateScope();
+							}
+							listEntry entry = {$2.name,$1.type,offsets.top(),list<TYPE>(),A_UNDEFINED};  
+							if((insert(vartable,entry) != 0)){
+								//std::cout << "legal coercios : " << (isLegalCoersion($4.type,$1.type)) << std::endl;
+								errorDef(yylineno,$2.name.c_str());
+								exit(1);
+							}
+							if(!isLegalCoersion($4.type,$1.type)){
+								errorMismatch(yylineno);
+								exit(1);
+							}
+							if(last_statement_condition ==1){
+								DestroyScope();
+							}
+						}
+			| ID ASSIGN Exp SC{
+				
+				if((isExist(vartable,$1.name) !=1) || (getTypeFromVarTable(vartable,$1.name)==A_FUNC )){
+					errorUndef(yylineno,$1.name.c_str());
+					exit(1);
+					}
+				if((!isLegalCoersion($3.type,(getTypeFromVarTable(vartable,$1.name))))){
+					errorMismatch(yylineno);
+					exit(1);
+				}	
+				
+				}
+			| Call SC 
+			| RETURN SC {
+					if(RetCheck != A_VOID){
+						errorMismatch(yylineno);
+						exit(1);
+					}
+				}
+			| RETURN Exp SC{
+					if(RetCheck != $2.type){
+						errorMismatch(yylineno);
+						exit(1);
+					}
+				}
+			| IF LPAREN Exp {last_statement_condition=1;if($3.type != A_BOOLEAN){errorMismatch(yylineno);exit(1);} }IFCONTINUE 
+			| WHILE  LPAREN Exp {last_statement_condition=1;if($3.type != A_BOOLEAN){errorMismatch(yylineno);exit(1);} while_num++; } RPAREN statement {
+					while_num--;
+					last_statement_condition=0;
+				}
+			| BREAK SC {
+							if(while_num <= 0){
+								errorUnexpectedBreak(yylineno);
+								exit(1);
+							}	
+						}
+			| SWITCH LPAREN Exp {if(!(($3.type == A_INTEGER)||($3.type==A_BYTE))){errorMismatch(yylineno);exit(1);} } RPAREN LBRACE CasesList RBRACE SC
+		  	
+IFCONTINUE : RPAREN statement {last_statement_condition=0;}
+			| RPAREN  statement ELSE {last_statement_condition=1;} statement {last_statement_condition=0;}
+			
+CasesList : CaseStat CasesList
+			| CaseStat
+
+CaseStat : CASE NUM COLON {last_statement_condition=1;} statement BREAK SC {last_statement_condition=0;}
+			| CASE NUM B COLON {last_statement_condition=1;} statement BREAK SC {last_statement_condition=0;}
+
+Call : ID LPAREN ExpList RPAREN	{
+					if(isExist(vartable,$1.name) != 1 ){
+						if($1.name == "print"){
+							list<TYPE> decleration = list<TYPE>();
+							decleration.push_front(A_STRING);
+							if(checkFuncArgs(decleration,$3.params) != true){
+								errorPrototypeMismatch(yylineno,$1.name.c_str(),ListToVector(decleration));
+								exit(1);
+							}
+							$$.type = A_VOID;
+						}else if($1.name == "printi")  {
+							list<TYPE> decleration = list<TYPE>();
+							decleration.push_front(A_INTEGER);
+							if(checkFuncArgs(decleration,$3.params) != true){
+								errorPrototypeMismatch(yylineno,$1.name.c_str(),ListToVector(decleration));
+								exit(1);
+							}
+							$$.type = A_VOID;
+						}else{
+							errorUndefFunc(yylineno,$1.name.c_str());
+							exit(1);
+						}
+					}else{
+					listEntry entry=get_exists_variable(vartable,$1.name);
+					//std::cout << "***type:" << entry.type << std::endl; 
+					if(entry.type != A_FUNC){
+						errorUndefFunc(yylineno,$1.name.c_str());
+						exit(1);
+					}
+					if(checkFuncArgs(entry.params,$3.params) ==false ){
+						errorPrototypeMismatch(yylineno,$1.name.c_str(),ListToVector(entry.params));
+						exit(1);
+					}
+					$$.type = entry.retType;
+					}
+				} 	
+			| ID LPAREN RPAREN {
+					if(isExist(vartable,$1.name) != 1 ){
+						errorUndefFunc(yylineno,$1.name.c_str());
+						exit(1);
+					}
+					listEntry entry=get_exists_variable(vartable,$1.name.c_str());
+					if(entry.type != A_FUNC){
+						errorUndefFunc(yylineno,$1.name.c_str());
+						exit(1);
+					}
+					if(entry.params.size() != 0){
+						errorPrototypeMismatch(yylineno,$1.name.c_str(),ListToVector(entry.params));
+						exit(1);
+					}
+					$$.type = entry.retType;
+				}
+
+ExpList : Exp { $$.params.push_front($1.type);}
+			| Exp COMMA ExpList {$$.params = $3.params;$$.params.push_front($1.type);}
+
+Type 	: 	INT 	{$$.type = A_INTEGER;}
+		|	BYTE  	{$$.type = A_BYTE;}
+		|	BOOL 	{$$.type = A_BOOLEAN;}
+		
+Exp	:	LPAREN Exp RPAREN	{$$.type=$2.type;}
+	|	Exp BINOP Exp { checkIfNumericTypes($1.type , $3.type)==1?$$.type=A_INTEGER:$$.type=A_BYTE;}
+	|	ID		{
+					if(isExist(vartable,$1.name)!=1){
+						errorUndef(yylineno,$1.name.c_str());
+						exit(1);
+					}
+					listEntry entry=get_exists_variable(vartable,$1.name);
+					if(!((entry.type == A_INTEGER) || (entry.type == A_BOOLEAN) || (entry.type == A_BYTE))){
+						errorUndef(yylineno,$1.name.c_str());
+						exit(1);
+					}
+					$$.name = $1.name;
+					//$$.type=$1.type;
+					$$.type = getTypeFromVarTable(vartable,$1.name);
+				}	
+	|   Call	{
+			if($1.type == A_VOID){
+				errorMismatch(yylineno);
+				exit(1);
+			}
+			$$.type = $1.type;
+		}
+	|	NUM		{$$.value = $1.value; $$.type=A_INTEGER;}			
+	|	NUM B   {
+			if($$.value > 255){
+				string str = "";
+				str=str+ $$.value;
+				errorByteTooLarge(yylineno,str.c_str());
+				exit(1);
+			}
+			$$.value = $1.value; 
+			$$.type=A_BYTE;
+			
+			}
+	|	STRING  {$$.name = $1.name; $$.type=A_STRING;}
+	|	TRUE	{$$.value = TRUE; $$.type=A_BOOLEAN;}	
+	|	FALSE	{$$.value = FALSE; $$.type=A_BOOLEAN;}		
+	|	NOT Exp	{checkBoolTypes($2.type,A_BOOLEAN);$$.type=A_BOOLEAN;} 		
+	|	Exp OR Exp	{checkBoolTypes($1.type,$3.type);$$.type=A_BOOLEAN;}	
+	|	Exp AND Exp		{checkBoolTypes($1.type,$3.type);$$.type=A_BOOLEAN;}
+	|	Exp RELOP Exp { checkIfNumericTypes($1.type , $3.type);$$.type=A_BOOLEAN;  }
+
+	
+%%
+
+
+bool checkFuncArgs(list<TYPE> decleration,list<TYPE> callparams){
+	if(decleration.size() != callparams.size() ) return false;
+	list<TYPE>::const_iterator element2 = callparams.begin();
+	for(list<TYPE>::const_iterator element = decleration.begin()  ; element!=decleration.end() ;  ++element ,++element2)
+	{	
+		//std::cout << "decleration" << *element << std::endl;
+		//std::cout << "params" << *element2 << std::endl;
+		if(!isLegalCoersion(*element2,*element)) return false;
+	}
+	return true;
+}
+
+std::string operator+(std::string const &a, int b) {
+  std::ostringstream oss;
+  oss << a << b;
+  return oss.str();
+}
+
+bool updateFuncParams(list< list<listEntry> >& vartable,listEntry& values){
+	//list<listEntry>& globalScope = *(vartable.begin());
+	list<listEntry>& globalScope = vartable.back();
+	for(list<listEntry>::iterator it = globalScope.begin() ; it != globalScope.end() ;++it ){
+		//std::cout << "stored name : " <<(*it).name << std::endl;
+		//std::cout << "update name : " <<values.name << std::endl;
+		if((*it).name == values.name){
+			(*it) = values;
+			/*std::cout <<"from heaven" << std::endl;
+			for(list<TYPE>::iterator it2=(*it).params.begin();it2 != (*it).params.end() ; ++it2 ){
+				std::cout << *it2 << std::endl;
+			}*/
+			return true;
+		}
+	}
+	return false;
+}
+
+list<TYPE> getParamsFromRecentScope(){
+	//std::cout << "***********************getParamsFromRecentScope" << std::endl;
+	printOk("getParamsFromRecentScope 1\n");
+	//printTable(vartable.front());
+	list<listEntry>& localScope = vartable.front();
+	printOk("getParamsFromRecentScope 2\n");
+	//std::cout << "socpes num :" << vartable.size() << std::endl ;
+	//std::cout << "local scope addr: " << &localScope << std::endl;
+	//printTable(localScope);
+	//std::cout <<"local scope size" <<localScope.size() << std::endl;
+	printOk("getParamsFromRecentScope 3\n");
+	list<TYPE> retlist = list<TYPE>();
+	//printTable(vartable.front());
+	for(list<listEntry>::iterator it = localScope.begin() ; it != localScope.end() ; it++ ){
+		printOk("getParamsFromRecentScope 4\n");
+		//std::cout << "***" << (*it).name <<(*it).type << std::endl;
+		retlist.push_front((*it).type);
+	}
+	printOk("getParamsFromRecentScope 5\n");
+	//std::cout << "printing retlist"<< std::endl;
+	/*for(list<TYPE>::iterator it=retlist.begin();it != retlist.end() ; ++it ){
+		std::cout << *it << std::endl;
+	} */
+	return retlist;
+}
+
+
+//---------------------------------------------------------------------------------
+
+ int checkIfNumericTypes(TYPE type1 , TYPE type2 ){
+ if( (type1 != A_INTEGER && type1 != A_BYTE) ){
+	 
+	 errorMismatch(yylineno);
+	 exit(1);
+ }
+
+
+	 if(type2 != A_INTEGER && type2 != A_BYTE) {
+	 
+	 errorMismatch(yylineno);
+	 exit(1);
+	 
+	 
+ }
+     if(type1 == A_INTEGER || type2==A_INTEGER){
+		 return 1;
+	 }
+	 return 0;
+	 
+ }
+void checkBoolTypes(TYPE type1,TYPE type2){
+	 if(type1!=A_BOOLEAN || type2!=A_BOOLEAN ){
+			errorMismatch(yylineno);
+			exit(1);
+	 }			
+	 
+ }
+ 
+/* void addAllToList(list<TYPE>& list1,list<TYPE>& list2){
+	 
+	 for(list<list<listEntry> >::const_iterator element = list2.begin()  ; element!=list2.end() ;  element++ )
+	{	
+		list1.push_front(*element);
+	}
+	  
+ }*/
+
+int insertFunc(list< list<listEntry> >& vartable,listEntry& values){
+	if(isExist(vartable,values.name) == 1){
+		return -1;
+	}
+	if(values.name == "print" || values.name == "printi"){
+		return -1;
+	}
+	//std::cout << "name = " << values.name<< ", type = " << values.type << " ,offset =" << values.offset << std::endl;
+	//std::cout << "offsets.top() = " << offsets.top() << std::endl;
+	vartable.front().push_front(values);
+	//std::cout <<"insert param : " <<vartable.front().size() << std::endl;
+	//std::cout <<"insert param : " <<vartable.front().front().name << std::endl;
+	//printTable(vartable.front());
+	//std::cout << "offsets.top() = " << offsets.top() <<std::endl;
+	return 0;
+}
+ 
+int insertParam(list< list<listEntry> >& vartable,listEntry& values){
+	if(isExist(vartable,values.name) == 1){
+		return -1;
+	}
+	if(values.name == "print" || values.name == "printi"){
+		return -1;
+	}
+	//std::cout << "name = " << values.name<< ", type = " << values.type << " ,offset =" << values.offset << std::endl;
+	//std::cout << "offsets.top() = " << offsets.top() << std::endl;
+	
+	vartable.front().push_front(values);
+	//std::cout <<"insert param : " <<vartable.front().size() << std::endl;
+	//std::cout <<"insert param : " <<vartable.front().front().name << std::endl;
+	//printTable(vartable.front());
+	//std::cout << "offsets.top() = " << offsets.top() <<std::endl;
+	return 0;
+}
+ 
+int insert(list< list<listEntry> >& vartable,listEntry& values){
+	if(isExist(vartable,values.name) == 1){
+		return -1;
+	}
+	if(values.name == "print" || values.name == "printi"){
+		return -1;
+	}
+	//std::cout << "name = " << values.name<< ", type = " << values.type << " ,offset =" << values.offset << std::endl;
+	//std::cout << "offsets.top() = " << offsets.top() << std::endl;
+	vartable.front().push_front(values);
+	offsets.top()++;
+	//std::cout << "offsets.top() = " << offsets.top() <<std::endl;
+	return 0;
+}
+
+int isExist(list<list<listEntry> > & table , string varName)
+{
+	list<list<listEntry> >::const_iterator end = table.end();
+	for(list<list<listEntry> >::const_iterator element = table.begin()  ; element!=end ;  element++ )
+	{
+		list<listEntry>::const_iterator lend = (*element).end();
+		for(list<listEntry>::const_iterator lentry = (*element).begin()  ; lentry != lend ; lentry++)
+		{
+			if((*lentry).name == varName ) 
+				return 1 ;
+		}
+	}
+	return 0 ; 
+}
+listEntry get_exists_variable(list<list<listEntry> > & table , string varName){
+	list<list<listEntry> >::const_iterator end = table.end();
+	for(list<list<listEntry> >::const_iterator element = table.begin()  ; element!=end ;  element++ )
+	{
+		 list<listEntry>::const_iterator lend = (*element).end();
+		for(list<listEntry>::const_iterator lentry = (*element).begin()  ; lentry != lend ; lentry++)
+		{
+			if((*lentry).name == varName ) 
+				return (*lentry) ;
+		}
+	}
+}
+TYPE getTypeFromVarTable(list<list<listEntry> > & table , string varName){
+	return get_exists_variable(table,varName).type;
+}
+/*
+void check_plus_minus_type(Type exp1_type,Type exp2_type,int lineno){
+	if((exp1_type == A_BOOLEAN)||(exp2_type == A_BOOLEAN)||((isTemp(exp1_type) )&&( !isTemp(exp2_type) ))||(!isTemp(exp1_type) && isTemp(exp2_type) ) ){
+		 errorMismatch(lineno);
+		 exit(1);
+	}
+} */
+void CreateScope(){
+	//std::cout << "CreateScope entered" << std::endl; // debug
+	vartable.push_front(list<listEntry>());
+	//std::cout << "CreateScope stage 1 " << std::endl; // debug
+	offsets.push(offsets.size()==0 ? 0 :offsets.top());
+	//debug
+	//std::cout << "CreateScope exit" << std::endl; // debug
+}
+void DestroyScope(){
+	//std::cout << "enter destroyScope()" << std::endl ;
+	endScope();
+	list<listEntry> current_scope = vartable.front();
+	//printTable(current_scope);
+	vartable.pop_front();
+	offsets.pop(); 
+    list<listEntry>::reverse_iterator lend = current_scope.rend();
+	for(list<listEntry>::reverse_iterator lentry = current_scope.rbegin()  ; lentry != lend ; lentry++){
+		listEntry var = *lentry;
+		string retType;
+		if(var.type == A_FUNC){
+			
+			switch(var.retType){
+				case A_INTEGER : retType = "INT";
+								break;
+				case A_BOOLEAN : retType = "BOOL";
+								break;
+				case A_BYTE : retType = "BYTE";
+								break;
+				case A_VOID :	retType = "VOID";
+								break;
+				default : 
+							std::cout << "error in DestroyScope1 undefined variable"<<std::endl;
+							exit(1);
+			}
+		}
+		string var_type;
+		switch(var.type){
+			case A_INTEGER : var_type = "INT";
+							break;
+			case A_BOOLEAN : var_type = "BOOL";
+							break;
+			case A_BYTE : var_type = "BYTE";
+							break;
+			case A_FUNC : 
+							/*for(list<TYPE>::iterator it2=var.params.begin();it2 != var.params.end() ; ++it2 ){
+								std::cout <<"destory scope ++++++ : "<< *it2 << std::endl;
+							}
+							for(std::vector<const char *>::iterator it = ListToVector(var.params).begin() ; it!=ListToVector(var.params).end(); ++it ){
+								std::cout <<"destory scope *** : "<< *it <<std::endl; 
+							}
+							*/
+							var_type = makeFunctionType(retType.c_str(),ListToVector(var.params));
+							break;
+			default : 
+						std::cout << "error in DestroyScope2 undefined variable"<<std::endl;
+						exit(1);
+		}
+		//std::cout <<"destory scope: "<< var_type <<std::endl; 
+		printID(var.name.c_str(),var.offset,var_type.c_str());
+		
+	}
+	//std::cout << "after destroing" << std::endl;
+	//if(vartable.size() !=0)
+	//	printTable(vartable.front());
+	//std::cout << "exit destroyScope()" << std::endl ;
+}
+
+std::vector<const char*> ListToVector(const list<TYPE>  list )
+{
+	std::vector<const char*> vec ;
+	for(std::list<TYPE>::const_iterator it= list.begin(); it!= list.end();++it){
+		const char* var_type  ;
+		switch(*it){
+			case A_INTEGER : var_type = intPointer;
+							break;
+			case A_BOOLEAN : var_type = boolPointer;
+							break;
+			case A_BYTE : var_type = bytePointer;
+							break;
+			case A_STRING : var_type = stringPointer;
+							break;
+			default : 
+						std::cout << "error in ListToVector undefined variable"<<std::endl;
+						exit(1);
+		}
+		//std::cout <<"list to vector:"<< var_type.c_str() <<std::endl;
+		vec.push_back(var_type);
+	}
+	return vec;
+}
+
+int main(int argc , char* argv[])
+{
+	//yyin = fopen(argv[1],"r");
+	int res = yyparse();
+	//fclose(yyin);
+	return res ; 
+}
+
+bool isLegalCoersion(TYPE type1,TYPE type2)   // from type 1 to type 2
+{
+	if((type1 == A_UNDEFINED) || (type2 == A_UNDEFINED) ) {
+		std::cout << "error in isLegalCoersion " << std::endl;
+		exit(1);
+	}
+	if(type1 == type2) return true;
+	if((type1 == A_BYTE) && (type2 == A_INTEGER) ) return true;
+	return false;
+}
+
+/*void AssetBoolType(Type type,int lineno){
+if(type != A_BOOLEAN){
+					errorMismatch(lineno);
+					//std::cout << "ooooops" << std::endl;
+					exit(1);
+				}
+}*/
+
+int yyerror(char * message)
+{
+	errorSyn(yylineno);
+	exit(1);
+}
+
+
+void printTable(const list<listEntry> & table)
+{
+	  std::cout << "printing table " << std::endl ; 
+	 list<listEntry>::const_iterator lend = table.end();
+	 for(list<listEntry>::const_iterator lentry = table.begin()  ; lentry != lend ; lentry++)
+	 {
+	 	printLentry(*lentry);
+	 }
+}
+
+void printLentry(const listEntry & values)
+{
+	std::cout << "name = " << values.name<< ", type = " << values.type << " ,offset =" << values.offset << std::endl;
+}
+
+void printOk(const char* str){
+	//std::cout << str << std::endl;
+}
