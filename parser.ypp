@@ -2,10 +2,44 @@
 
 
 
-
-
-
-
-
-
 %}
+
+%left AND
+%left OR
+%left RELOP
+%left BINOP
+
+
+%token VOID
+%token INT
+%token BYTE
+%token B
+%token BOOL
+
+%right NOT
+%token TRUE
+%token FALSE
+%token RETURN
+%token IF
+
+%token WHILE
+%token SWITCH
+%token CASE
+%token BREAK
+%token COLON
+%token SC
+%token COMMA
+%token LPAREN
+%nonassoc RPAREN
+%token LBRACE
+%token RBRACE
+%token ASSIGN
+
+
+%token NUM
+%token ID
+%token STRING
+
+%nonassoc ELSE
+
+%%

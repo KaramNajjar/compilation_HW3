@@ -1,7 +1,8 @@
 %{
 
-#include "tokens.h"
-int handleToken(int t);
+	#include "parser.tab.hpp"
+
+	int handleToken(int t);
 
 
 %}
