@@ -1,5 +1,8 @@
 %{
 
+	#include "output.hpp"
+	#include "parser.tab.hpp"
+	#include "parser.hpp"
 
 
 %}
@@ -43,3 +46,13 @@
 %nonassoc ELSE
 
 %%
+
+
+
+%%
+
+int main(int argc , char* argv[])
+{
+	int result = yyparse();
+	return result ; 
+}

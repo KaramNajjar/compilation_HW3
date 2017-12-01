@@ -1,12 +1,15 @@
 %{
 
 	#include "parser.tab.hpp"
+	#include "parser.hpp"
+	#include "output.hpp"
 
 	int handleToken(int t);
 
 
 %}
 %option noyywrap
+%option yylineno
 
 %%
 
@@ -44,6 +47,9 @@
 [\t| ]*								; // IGNORE SPACES
 [\r|\n|\r\n]*						; //IGNORE NEW LINES
 \/\/[^\r\n]*[\r|\n|\r\n]?			; //COMMENT
+
+.									{errorLex(yylineno); exit(1);}
+
 
 %%
 /*
