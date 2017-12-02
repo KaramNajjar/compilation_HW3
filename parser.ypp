@@ -1,8 +1,15 @@
 %{
 
 	#include "output.hpp"
-	#include "parser.tab.hpp"
 	#include "parser.hpp"
+	#include <typeinfo>
+	#include <iostream>
+	using namespace std;
+	using namespace output;
+
+	int yyerror(string message);
+	extern int yylineno;
+	extern int yylex();
 
 
 %}
@@ -28,6 +35,7 @@
 %token WHILE
 %token SWITCH
 %token CASE
+%token DEFAULT
 %token BREAK
 %token COLON
 %token SC
@@ -47,12 +55,90 @@
 
 %%
 
-Program : 
+Prog : Exp { cout << "Prog exp: " << endl; } ;
 
+Exp : LPAREN Exp RPAREN { $$ = $2; }
+		
+	| Exp BINOP Exp 
+		{ 
+			cout << "Binop exp started " << endl;
+			
+			
+			if(((ExpNode*)$1)->type != EX_INTEGER && ((ExpNode*)$1)->type != EX_BYTE)
+			{
+				errorMismatch(yylineno);
+				exit(1);
+			}
+			if(((ExpNode*)$1)->type != ((ExpNode*)$3)->type)
+			{
+				errorMismatch(yylineno);
+				exit(1);
+			}
+			
+			$$ = new BinExpNode((ExpNode*)$1,(BinOpNode*)$2,(ExpNode*)$3); 
+			((ExpNode*)$$)->type = ((ExpNode*)$1)->type;
+			
+			cout << "Binop exp finished" << endl;
+
+		}
+		
+	| ID 
+		{
+			cout << "ID exp started" << endl;
+			$$ = new IdExpNode((IdNode*)$1); 
+			
+			cout << "ID exp finished" << endl;
+		}
+				
+	| NUM 
+		{ 
+			cout << "NUM exp started" << endl;
+			
+			$$ = new NumExpNode(((NumExpNode*)$1)->num); 
+			((ExpNode*)$$)->type = EX_INTEGER;
+			
+			cout << "NUM exp finished" << endl;
+
+		}
+		
+	| NUM B
+		{
+			cout << "NUM B exp started" << endl;
+
+			if(((NumBExpNode*)$1)->num > 255){
+				string str = "" + ((NumBExpNode*)$1)->num;
+				errorByteTooLarge(yylineno,str.c_str());
+				exit(1);
+			}
+			$$ = new NumBExpNode(((NumBExpNode*)$1)->num); 
+			((ExpNode*)$$)->type = EX_BYTE;
+			
+			cout << "NUM B exp finished" << endl;
+
+		}
+;
 %%
 
-int main(int argc , char* argv[])
+int main()
 {
+	cout << "Main: " << endl;
 	int result = yyparse();
 	return result ; 
 }
+
+int yyerror(string message)
+{
+	cout << "Error: " << endl;
+	errorSyn(yylineno);
+	exit(1);
+}
+
+//bool checkExpBinOpTypes(ExpNode e1, ExpNode e2)
+//{
+//	if(typeid(e1).hash_code() == typeid(NumExpNode*).hash_code() || typeid(e1).hash_code() == typeid(NumBExpNode*).hash_code())
+//		if(typeid(e1).hash_code() == typeid(e2).hash_code())
+//			return true;
+//	
+//	return false;
+//}
+

@@ -6,148 +6,190 @@
 
 using namespace std;
 
+enum EType
+{
+	E_INT, E_BOOL, E_BYTE ,E_UNDEFINED
+};
+
 struct Node 
 {
 	
 };
 
-enum EType
+struct RetTypeNode : Node
 {
-	E_INT, E_BOOL, E_BYTE 
+	
 };
 
-struct Type : Node
+struct TypeNode : RetTypeNode
 {
 	EType etype;
 	
-	Type(EType etype)
+	TypeNode(EType etype)
 	{
 		this->etype = etype;
 	}
 };
 
-struct RetType : Node
+struct VoidTypeNode : RetTypeNode
 {
-	bool isVoid;
-	Type type;
-
-	RetType(Type type)
-	{
-		this->type = type;
-		if(type == null)
-			isVoid = false;
-	}
+	
 };
-	
-struct Id : Node
+
+struct IdNode : Node
 {
-	string name;
+	string id;
 	
-	Id(string name)
+	IdNode(string id)
 	{
-		this->name = name;
+		this->id = id;
 	}
 };	
+
+struct StringNode : Node{
 	
-struct FormalDecl : Node
-{
-	Type type;
-	Id id;
+	string str;
 	
-	FormalDecl(Type type, Id id)
-	{
-		this->type = type;
-		this->id = id;
+	StringNode(string str){
+		this->str = str;
 	}
-};
-
-struct FormalsList : Node
-{
-	list<FormalDecl> formalDecls;
-	
-	FormalsList()
-	{
-		formalDecls = new list<FormalDecl>();
-	}
-};
-
-struct Formals : Node
-{
-	FormalsList formalsList;
-	
-	Formals(FormalsList formalsList)
-	{
-		this->formalsList = formalsList;
-	}
-};
-
-struct Expr : Node
-{
-	Expr expr;
-	Id id;
-	
-	Expr(Expr expr, Id id)
-	{
-		this->expr = expr;
-		this->id = id;
-	}
-}
-
-struct Statment : Node
-{
-	
-}
-
-struct DeclStatment : Node
-{
-	Type type;
-	Id id;
-	
-	DeclStatment(Type type, Id id)
-	{
-		this->type = type;
-		this->id = id;
-	}
-}
-
-struct AssignStatment : Node
-{
-	Expr expr;
-	Id id;
-	
-	AssignStatment(Expr expr, Id id)
-	{
-		this->expr = expr;
-		this->id = id;
-	}
-}
-
-struct Statments : Node
-{
-	list<Statment> statments;
-	
-	Statments()
-	{
-		this->statments = new list<Statment>();
-	}
-};
-
-struct Func : Node
-{
-	RetType retType;
-	
-	Func(RetType retType, ID id, Formals formals, )
-	{
 		
+}; 
+
+struct NumNode : Node{
+	
+	int num;
+	
+	NumNode(int num){
+		this->num = num;
+	}
+		
+}; 
+
+//////////////////////////////////////////// ExpNode Regions ////////////////////////////////////////////
+
+//enum R{
+//	B_AND,B_OR,B_EQ,B_NEQ,B_BG,B_SM,B_BGE,B_SME
+//};
+
+ enum EXPTYPE{
+	 
+	EX_INTEGER , EX_BOOLEAN , EX_BYTE , EX_VOID ,EX_STRING, EX_FUNC , EX_UNDEFINED
+};
+
+enum BinOp{
+	B_PLUS,B_MINUS,B_MUL,B_DIV
+};
+
+struct BinOpNode : Node
+{
+	BinOp binop;
+	
+	BinOpNode(BinOp binop){
+		this->binop = binop;
+	}
+};
+
+struct ExpNode : Node
+{
+	EXPTYPE type ;
+	
+	ExpNode(EXPTYPE type){
+		 this->type = type;
+	}
+};
+
+struct IdExpNode : ExpNode
+{
+	IdNode* id;
+	
+	IdExpNode(IdNode* id) : ExpNode(EX_UNDEFINED){
+		this->id = id;
+	}
+};
+
+struct NumExpNode : ExpNode{
+	
+	int num;
+	
+	NumExpNode(int num) : ExpNode(EX_INTEGER){
+		this->num = num;
 	}
 	
 };
-	
-	
-	
 
+struct NumBExpNode : NumExpNode{
 	
+	NumBExpNode(int num): NumExpNode(num){
 
-#define YYSTYPE Node*	
+	}
+	
+};
+
+struct StringExpNode:ExpNode{
+	
+	string str;
+	
+	StringExpNode(string str) : ExpNode(EX_STRING){
+		this->str = str;
+	}
+		
+};
+
+struct BoolExpNode: ExpNode{
+	
+	bool b;
+	
+	BoolExpNode(bool b): ExpNode(EX_BOOLEAN){
+		this->b = b;
+	}
+};
+
+struct NotExpNode : ExpNode{
+	
+	ExpNode* exp;
+	
+	NotExpNode(ExpNode* exp): ExpNode(EX_UNDEFINED){
+		this->exp = exp;
+	}
+};
+
+struct BinExpNode : ExpNode
+{
+	ExpNode* exp1;
+	BinOpNode* op;
+	ExpNode* exp2;
+	
+	BinExpNode(ExpNode* exp1,BinOpNode* op ,ExpNode* exp2) : ExpNode(EX_UNDEFINED){
+		this->exp1 = exp1;
+		this->op = op;
+		this->exp2 = exp2;
+	}
+	
+};
+
+struct Call : Node
+{
+	
+	IdNode* id;
+	list<ExpNode*>* expList;
+	
+	Call(IdNode* id){
+		this->id = id;
+		expList = new list<ExpNode*>();
+	}
+};
+
+struct CallExpNode : ExpNode{
+	
+	Call* call;
+	
+	CallExpNode(Call* call) : ExpNode(EX_UNDEFINED){
+		this->call = call;
+	}
+	
+};
+
+#define YYSTYPE Node*
 
 #endif

@@ -1,11 +1,12 @@
 %{
-
-	#include "parser.tab.hpp"
+	
 	#include "parser.hpp"
+	#include "parser.tab.hpp"
 	#include "output.hpp"
-
-	int handleToken(int t);
-
+	#include <iostream>
+	
+	using namespace output;
+	using namespace std;
 
 %}
 %option noyywrap
@@ -13,37 +14,37 @@
 
 %%
 
-"void"								handleToken(VOID);
-"int"								handleToken(INT);
-"byte"								handleToken(BYTE);
-"b"									handleToken(B);
-"bool" 								handleToken(BOOL);
-"and"								handleToken(AND);
-"or"								handleToken(OR);
-"not"								handleToken(NOT);
-"true"								handleToken(TRUE);
-"false"								handleToken(FALSE);
-"return"							handleToken(RETURN);
-"if"								handleToken(IF);
-"else"								handleToken(ELSE);
-"while"								handleToken(WHILE);
-"switch"							handleToken(SWITCH);
-"case"								handleToken(CASE);
-"break"								handleToken(BREAK);
-"default"							handleToken(DEFAULT);
-":"									handleToken(COLON);
-";"									handleToken(SC);
-","									handleToken(COMMA);
-"("									handleToken(LPAREN);
-")"									handleToken(RPAREN);
-"{"									handleToken(LBRACE);
-"}"									handleToken(RBRACE);
-"="									handleToken(ASSIGN);
-"=="|"!="|"<"|">"|"<="|">=" 		handleToken(RELOP);
-"+"|"-"|"*"|"/"						handleToken(BINOP);
-[a-zA-Z][a-zA-Z0-9]*				handleToken(ID);
-0|[1-9][0-9]*						handleToken(NUM);
-\"([^\n\r\"\\]|\\[rnt"\\])+\"		handleToken(STRING);
+"void"								{ yylval = new VoidTypeNode(); return VOID;}
+"int"								{ yylval = new TypeNode(E_INT); return INT;}
+"byte"								{ yylval = new TypeNode(E_BYTE); return BYTE;}
+"b"									return B;
+"bool" 								{ yylval = new TypeNode(E_BOOL); return BOOL;}
+"and"								return AND;
+"or"								return OR; //{yylval = new BinOpNode(B_OR); return OR);}
+"not"								return NOT;
+"true"								return TRUE;
+"false"								return FALSE;
+"return"							return RETURN;
+"if"								return IF;
+"else"								return ELSE;
+"while"								return WHILE;
+"switch"							return SWITCH;
+"case"								return CASE;
+"break"								return BREAK;
+"default"							return DEFAULT;
+":"									return COLON;
+";"									return SC;
+","									return COMMA;
+"("									return LPAREN;
+")"									return RPAREN;
+"{"									return LBRACE;
+"}"									return RBRACE;
+"="									return ASSIGN;
+"=="|"!="|"<"|">"|"<="|">=" 		return RELOP;
+"+"|"-"|"*"|"/"						return BINOP;
+[a-zA-Z][a-zA-Z0-9]*				{ yylval = new IdNode(yytext); return ID;}
+0|[1-9][0-9]*						{ yylval = new NumExpNode(atoi(yytext)); ((NumExpNode*)yylval)->type = EX_INTEGER; return NUM;}
+\"([^\n\r\"\\]|\\[rnt"\\])+\"		{ yylval = new StringNode(yytext); return STRING;}
 [\t| ]*								; // IGNORE SPACES
 [\r|\n|\r\n]*						; //IGNORE NEW LINES
 \/\/[^\r\n]*[\r|\n|\r\n]?			; //COMMENT
@@ -52,46 +53,10 @@
 
 
 %%
-/*
-static const char* TOKENS_STRING[] = {
-	"VOID"
-	,"INT"
-	,"BYTE"
-	,"B"
-	,"BOOL"
-	,"AND"
-	,"OR"
-	,"NOT"
-	,"TRUE"
-	,"FALSE"
-	,"RETURN"
-	,"IF"
-	,"ELSE"
-	,"WHILE"
-	,"SWITCH"
-	,"CASE"
-	,"BREAK"
-	,"DEFAULT"
-	,"COLON"
-	,"SC"
-	,"COMMA"
-	,"LPAREN"
-	,"RPAREN"
-	,"LBRACE"
-	,"RBRACE"
-	,"ASSIGN"
-	,"RELOP"
-	,"BINOP"
-	,"ID"
-	,"NUM"
-	,"STRING"
-};
 
-*/
-int handleToken(int t){
-	
 
-	//printf(">%s<",TOKENS_STRING[t]);
-	return t;
-	
-}
+
+
+
+
+
