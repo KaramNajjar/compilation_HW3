@@ -856,7 +856,7 @@ YY_RULE_SETUP
 case 2:
 YY_RULE_SETUP
 #line 18 "scanner.lex"
-{ yylval = new TypeNode(E_INT); return INT;}
+{ yylval = new TypeNode(E_INTEGER); return INT;}
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
@@ -871,7 +871,7 @@ return B;
 case 5:
 YY_RULE_SETUP
 #line 21 "scanner.lex"
-{ yylval = new TypeNode(E_BOOL); return BOOL;}
+{ yylval = new TypeNode(E_BOOLEAN); return BOOL;}
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
@@ -891,12 +891,12 @@ return NOT;
 case 9:
 YY_RULE_SETUP
 #line 25 "scanner.lex"
-return TRUE;
+{yylval = new BoolNode(true); return TRUE;}
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
 #line 26 "scanner.lex"
-return FALSE;
+{yylval = new BoolNode(false);return FALSE;}
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
@@ -996,7 +996,7 @@ YY_RULE_SETUP
 case 30:
 YY_RULE_SETUP
 #line 46 "scanner.lex"
-{ yylval = new NumExpNode(atoi(yytext)); ((NumExpNode*)yylval)->type = EX_INTEGER; return NUM;}
+{ yylval = new NumNode(atoi(yytext)); return NUM;}
 	YY_BREAK
 case 31:
 YY_RULE_SETUP

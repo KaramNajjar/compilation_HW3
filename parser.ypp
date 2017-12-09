@@ -3,6 +3,8 @@
 	#include "output.hpp"
 	#include "parser.hpp"
 	#include <typeinfo>
+	#include <string.h>
+	#include <stdbool.h>
 	#include <iostream>
 	using namespace std;
 	using namespace output;
@@ -11,6 +13,11 @@
 	extern int yylineno;
 	extern int yylex();
 
+
+	bool isLegalCoersion(EType type1,EType type2);
+	bool checkFuncArgs(list<EType> decleration,list<ExpNode*>* callparams);
+	std::vector<string> ListToVector(const list<EType> list);
+	bool expListExist = false;
 
 %}
 
@@ -55,68 +62,220 @@
 
 %%
 
-Prog : Exp { cout << "Prog exp: " << endl; } ;
 
+Prog : Exp { cout << "Prog exp: " << endl; } ;//First_Finish
+Call : ID LPAREN ExpList RPAREN	//First_Finish
+	{
+		$$ = new CallNode((IdNode*)$1);
+		//if(ID exist)
+		{
+			//listEntry entry=get_exists_variable(vartable,$1.name);
+			
+		//if(entry->type != E_FUNC)
+			{
+				errorUndefFunc(yylineno,((IdNode*)$1)->id.c_str());
+				exit(1);
+			}
+		//	if(checkFuncArgs(entry.params,$3.params) == false )
+		{
+				//errorPrototypeMismatch(yylineno,$1->id.c_str(),ListToVector(entry.params));
+				exit(1);
+			}
+			//$$->type = entry.retType;
+		}
+		//else
+		{
+			$$->type = E_VOID;
+			if(((IdNode*)$1)->id == "print"){
+				//print function
+					list<EType> l = list<EType>();
+					l.push_back(E_STRING);
+				if(!checkFuncArgs(l,((ExpListNode*)$3)->params))
+				{
+					vector<string> v = vector<string>();
+					v.push_back("STRING");
+					errorPrototypeMismatch(yylineno,((IdNode*)$1)->id.c_str(),v);
+					exit(1);
+				}
+			}else if(((IdNode*)$1)->id == "printi")  {
+				//printi function
+				list<EType> l = list<EType>();
+				l.push_back(E_INTEGER);
+				if(!checkFuncArgs(l,((ExpListNode*)$3)->params)){
+					
+					vector<string> v = vector<string>();
+					v.push_back("INT");
+					
+					errorPrototypeMismatch(yylineno,((IdNode*)$1)->id.c_str(),v);
+					exit(1);
+				}
+				
+			}else{
+				errorUndefFunc(yylineno,((IdNode*)$1)->id.c_str());
+				exit(1);
+			}
+		}
+	
+		
+	};
+	| ID LPAREN RPAREN //First_Finish
+		{
+		//if(isExist(vartable,$1.name) != 1 )
+		{
+			errorUndefFunc(yylineno,((IdNode*)$1)->id.c_str());
+			exit(1);
+		}
+		//listEntry entry=get_exists_variable(vartable,$1.name.c_str());
+		//if(entry.type != E_FUNC)
+		{
+			errorUndefFunc(yylineno,((IdNode*)$1)->id.c_str());
+			exit(1);
+		}
+		//if(entry.params.size() != 0)
+		{
+			//errorPrototypeMismatch(yylineno,((IdNode*)$1)->id.c_str(),ListToVector(entry.params));
+			exit(1);
+		}
+		//$$.type = entry.retType;
+		
+		}
+
+ExpList: Exp COMMA ExpList  //First_Finish
+		{
+			if(expListExist == false)
+				$$ = new ExpListNode();
+			
+			expListExist = true;
+			(((ExpListNode*)$$)->params)->push_front((ExpNode*)$1);
+		};
+		|Exp
+		{
+			if(expListExist == false)
+				$$ = new ExpListNode();
+			
+			
+			(((ExpListNode*)$$)->params)->push_front((ExpNode*)$1);
+			expListExist = false;
+		};
+		
+Type 	: 	INT 	{$$ = new TypeNode(E_INTEGER);} //First_Finish
+		|	BYTE  	{$$ = new TypeNode(E_BYTE);}
+		|	BOOL 	{$$ = new TypeNode(E_BOOL);};
+		
 Exp : LPAREN Exp RPAREN { $$ = $2; }
 		
-	| Exp BINOP Exp 
+	| Exp BINOP Exp //First_Finish
 		{ 
 			cout << "Binop exp started " << endl;
 			
 			
-			if(((ExpNode*)$1)->type != EX_INTEGER && ((ExpNode*)$1)->type != EX_BYTE)
+			if((((ExpNode*)$1))->type != E_INTEGER && (((ExpNode*)$1))->type != E_BYTE)
 			{
 				errorMismatch(yylineno);
 				exit(1);
 			}
-			if(((ExpNode*)$1)->type != ((ExpNode*)$3)->type)
+			if((((ExpNode*)$1))->type != (((ExpNode*)$3))->type)
 			{
 				errorMismatch(yylineno);
 				exit(1);
 			}
 			
-			$$ = new BinExpNode((ExpNode*)$1,(BinOpNode*)$2,(ExpNode*)$3); 
-			((ExpNode*)$$)->type = ((ExpNode*)$1)->type;
+			$$ = new BinExpNode(((ExpNode*)$1),(BinOpNode*)$2,((ExpNode*)$3)); 
+			((ExpNode*)$$)->type = (((ExpNode*)$1))->type;
 			
 			cout << "Binop exp finished" << endl;
 
 		}
 		
-	| ID 
+	| ID //First_Finish
 		{
 			cout << "ID exp started" << endl;
-			$$ = new IdExpNode((IdNode*)$1); 
+			//if(isExist(vartable,$1.name)!=1){
+			//			errorUndef(yylineno,$1.name.c_str());
+			//			exit(1);
+			//}
+			// check if identefier type is legal
 			
+			$$ = new IdExpNode((IdNode*)$1); 
 			cout << "ID exp finished" << endl;
 		}
-				
-	| NUM 
+	| Call //First_Finish , not sure
+		{
+			if($1->type == E_VOID){
+				errorMismatch(yylineno);
+				exit(1);
+			}
+			$$->type = $1->type;
+		}
+	| NUM //First_Finish
 		{ 
 			cout << "NUM exp started" << endl;
 			
-			$$ = new NumExpNode(((NumExpNode*)$1)->num); 
-			((ExpNode*)$$)->type = EX_INTEGER;
+			$$ = new NumExpNode((NumNode*)$1); 
 			
 			cout << "NUM exp finished" << endl;
 
 		}
 		
-	| NUM B
+	| NUM B //First_Finish
 		{
 			cout << "NUM B exp started" << endl;
 
-			if(((NumBExpNode*)$1)->num > 255){
-				string str = "" + ((NumBExpNode*)$1)->num;
+			if(((NumNode*)$1)->num > 255){
+				string str = "" + ((NumNode*)$1)->num;
 				errorByteTooLarge(yylineno,str.c_str());
 				exit(1);
 			}
-			$$ = new NumBExpNode(((NumBExpNode*)$1)->num); 
-			((ExpNode*)$$)->type = EX_BYTE;
+			$$ = new NumBExpNode((NumNode*)$1); 
 			
 			cout << "NUM B exp finished" << endl;
 
 		}
-;
+
+	| STRING //First_Finish
+		{
+			cout << "String exp started" << endl;
+			$$ = new StringExpNode((StringNode*)$1); 
+			cout << "String exp finished" << endl;
+		}
+		
+		
+	| TRUE		{$$ = new BoolExpNode((BoolNode*)$1);}//First_Finish	
+	| FALSE		{$$ = new BoolExpNode((BoolNode*)$1);}//First_Finish
+	| NOT Exp	//First_Finish
+		{
+			if((((ExpNode*)$2))->type != E_BOOLEAN){
+				errorMismatch(yylineno);
+				exit(1);
+			 }
+			$$ = new NotExpNode(((ExpNode*)$2));
+		}
+	| Exp OR Exp  //First_Finish
+		{
+			if(((ExpNode*)$1)->type != E_BOOLEAN || ((ExpNode*)$3)->type != E_BOOLEAN ){
+				errorMismatch(yylineno);
+				exit(1);
+			 }
+			 $$ = new ExpNode(E_BOOLEAN);
+		}
+	| Exp AND Exp //First_Finish
+		{
+			if(((ExpNode*)$1)->type != E_BOOLEAN || ((ExpNode*)$3)->type != E_BOOLEAN ){
+				errorMismatch(yylineno);
+				exit(1);
+			 }
+			 $$ = new ExpNode(E_BOOLEAN);
+		}
+	| Exp RELOP Exp	//First_Finish
+		{
+			if(((ExpNode*)$1)->type != E_INTEGER || ((ExpNode*)$3)->type != E_INTEGER ){
+				errorMismatch(yylineno);
+				exit(1);
+			 }
+			 $$ = new ExpNode(E_BOOLEAN);
+		};
+	
+
 %%
 
 int main()
@@ -131,6 +290,50 @@ int yyerror(string message)
 	cout << "Error: " << endl;
 	errorSyn(yylineno);
 	exit(1);
+}
+
+bool isLegalCoersion(EType fromType , EType toType)
+{
+	if((fromType == E_UNDEFINED) || (toType == E_UNDEFINED) ) {
+		std::cout << "error in isLegalCoersion " << std::endl;
+		exit(1);
+	}
+	if(fromType == toType) return true;
+	if((fromType == E_BYTE) && (toType == E_INTEGER) ) return true;
+	return false;
+}
+
+std::vector<string> ListToVector(const list<EType>  list )
+{
+	std::vector<string> vec ;
+	for(std::list<EType>::const_iterator it= list.begin(); it!= list.end();++it){
+		string var_type  ;
+		switch(*it){
+			case E_INTEGER : var_type = "INT";
+							break;
+			case E_BOOLEAN : var_type = "BOOL";
+							break;
+			case E_BYTE :	 var_type = "BYTE";
+							break;
+			case E_STRING : var_type = "STRING";
+							break;
+			default : 
+					std::cout << "error in ListToVector undefined variable"<<std::endl;
+					exit(1);
+		}
+		vec.push_back(var_type);
+	}
+	return vec;
+}
+bool checkFuncArgs(list<EType> decleration,list<ExpNode*>* callparams){
+
+	if(decleration.size() != callparams->size()) return false;
+	list<ExpNode*>::const_iterator element2 = callparams->begin();
+	for(list<EType>::const_iterator element = decleration.begin()  ; element!=decleration.end() ;  ++element ,++element2)
+	{	
+		if(!isLegalCoersion((*element2)->type,*element)) return false;
+	}
+	return true;
 }
 
 //bool checkExpBinOpTypes(ExpNode e1, ExpNode e2)
