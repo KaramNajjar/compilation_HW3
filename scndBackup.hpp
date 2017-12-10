@@ -16,16 +16,23 @@ enum EType
 
 struct Node 
 {
+	EType type;
+	
+	Node(EType type){
+		this->type = type;
+	}
+	Node(){
+		this->type = E_UNDEFINED;
+	}
 	
 };
 
 
 struct RetTypeNode : Node
 {
-	EType retType;
-	RetTypeNode(EType retType)
+	RetTypeNode(EType etype) : Node(etype)
 	{
-		this->retType = retType;
+		
 	}
 };
 
@@ -82,6 +89,8 @@ struct BoolNode : Node {
 	BoolNode(bool b){
 		this->b = b;
 	}
+	
+	
 };
 
 
@@ -105,9 +114,8 @@ struct BinOpNode : Node
 
 struct ExpNode : Node
 {
-	EType expType;
-	ExpNode(EType expType){
-		this->expType = expType;
+	
+	ExpNode(EType type):Node(type){
 	}
 };
 
@@ -115,7 +123,7 @@ struct IdExpNode : ExpNode
 {
 	IdNode* idNode;
 	
-	IdExpNode(IdNode* idNode, EType type) : ExpNode(type){
+	IdExpNode(IdNode* idNode) : ExpNode(E_STRING){
 		this->idNode = idNode;
 	}
 };
@@ -139,7 +147,7 @@ struct NumBExpNode : ExpNode{
 	
 };
 
-struct StringExpNode : ExpNode{
+struct StringExpNode:ExpNode{
 	
 	StringNode* str;
 	
@@ -149,7 +157,7 @@ struct StringExpNode : ExpNode{
 		
 };
 
-struct BoolExpNode : ExpNode{
+struct BoolExpNode: ExpNode{
 	
 	BoolNode* b;
 	
@@ -173,7 +181,7 @@ struct BinExpNode : ExpNode
 	BinOpNode* op;
 	ExpNode* exp2;
 	
-	BinExpNode(ExpNode* exp1,BinOpNode* op ,ExpNode* exp2) : ExpNode(E_INTEGER){
+	BinExpNode(ExpNode* exp1,BinOpNode* op ,ExpNode* exp2) : ExpNode(E_UNDEFINED){
 		this->exp1 = exp1;
 		this->op = op;
 		this->exp2 = exp2;
@@ -189,13 +197,12 @@ struct ExpListNode : Node{
 };
 struct CallNode : Node
 {
-	EType callType;
+	
 	IdNode* id;
 	list<ExpNode*>* expList;
 	
-	CallNode(IdNode* id, EType callType){
+	CallNode(IdNode* id){
 		this->id = id;
-		this->callType = callType;
 		expList = new list<ExpNode*>();
 	}
 };
@@ -204,9 +211,10 @@ struct CallExpNode : ExpNode{
 	
 	CallNode* callNode;
 	
-	CallExpNode(CallNode* callNode) : ExpNode(callNode->callType){
+	CallExpNode(CallNode* callNode) : ExpNode(E_UNDEFINED){
 		this->callNode = callNode;
 	}
+	
 };
 
 

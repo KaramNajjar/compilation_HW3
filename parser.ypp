@@ -16,10 +16,11 @@
 
 	typedef struct  {
 		string name;
-		E_TYPE type;
+		EType type;
 		int offset;
-		list<E_TYPE> params;  // only used for functions
-		E_TYPE retType ; 		// only used for functions
+		list<EType> params;  // only used for functions
+		EType retType; 		// only used for functions
+		bool isFunc;
 	}elementData;
 	
 	list<list<elementData> > vartable;
@@ -89,7 +90,7 @@ Funcs
 	{
 		FuncNode* currFunc = (FuncNode*)$1;
 		FormalsListNode* currFormalsList = currFunc->formalsNode->formalsListNode;
-		if(((IdNode*)currFunc->id)->id == "main" && currFunc->retType->type == E_VOID && currFormalsList->formalDecls->empty())
+		if(((IdNode*)currFunc->id)->id == "main" && currFunc->retType->retType == E_VOID && currFormalsList->formalDecls->empty())
 		{
 			mainFuncsCounter++;
 			if(mainFuncsCounter > 1)
@@ -257,7 +258,11 @@ Exp : LPAREN Exp RPAREN { $$ = $2; }
 			}
 			// check if identefier type is legal
 			elementData eData = get_exists_element($1->id)
-			if(eData->)
+			if(eData->isFunc)
+			{
+				errorUndef(yylineno,$1.name.c_str());
+				exit(1);
+			}
 				
 			
 			$$ = new IdExpNode((IdNode*)$1); 
@@ -407,14 +412,14 @@ bool isExist(string elementName)
 }
 elementData get_exists_element(string elementName){
 	
-	list<list<elementData> >::const_iterator end = table.end();
-	for(list<list<elementData> >::const_iterator element = table.begin()  ; element!=end ;  element++ )
+	list<list<elementData> >::const_iterator end = vartable.end();
+	for(list<list<elementData> >::const_iterator element = vartable.begin()  ; element!=end ;  element++ )
 	{
 		 list<elementData>::const_iterator lend = (*element).end();
-		for(list<elementData>::const_iterator element = (*element).begin()  ; element != lend ; element++)
+		for(list<elementData>::const_iterator elementData = (*element).begin()  ; elementData != lend ; elementData++)
 		{
-			if((*element).name == elementName ) 
-				return (*element) ;
+			if((*elementData).name == elementName ) 
+				return (*elementData) ;
 		}
 	}
 }
@@ -425,7 +430,7 @@ bool checkFuncArgs(list<EType> decleration,list<ExpNode*>* callparams){
 	list<ExpNode*>::const_iterator element2 = callparams->begin();
 	for(list<EType>::const_iterator element = decleration.begin()  ; element!=decleration.end() ;  ++element ,++element2)
 	{	
-		if(!isLegalCoersion((*element2)->type,*element)) return false;
+		if(!isLegalCoersion((*element2)->expType,*element)) return false;
 	}
 	return true;
 }

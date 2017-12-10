@@ -1,8 +1,8 @@
-/* A Bison parser, made by GNU Bison 3.0.2.  */
+/* A Bison parser, made by GNU Bison 3.0.4.  */
 
 /* Bison implementation for Yacc-like parsers in C
 
-   Copyright (C) 1984, 1989-1990, 2000-2013 Free Software Foundation, Inc.
+   Copyright (C) 1984, 1989-1990, 2000-2015 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -44,7 +44,7 @@
 #define YYBISON 1
 
 /* Bison version.  */
-#define YYBISON_VERSION "3.0.2"
+#define YYBISON_VERSION "3.0.4"
 
 /* Skeleton name.  */
 #define YYSKELETON_NAME "yacc.c"
@@ -70,6 +70,7 @@
 	#include <typeinfo>
 	#include <string.h>
 	#include <stdbool.h>
+	#include <stack> 
 	#include <iostream>
 	using namespace std;
 	using namespace output;
@@ -78,6 +79,17 @@
 	extern int yylineno;
 	extern int yylex();
 
+	typedef struct  {
+		string name;
+		EType type;
+		int offset;
+		list<EType> params;  // only used for functions
+		EType retType; 		// only used for functions
+		bool isFunc;
+	}elementData;
+	
+	list<list<elementData> > vartable;
+	stack<int> offsets;
 
 	bool isLegalCoersion(EType type1,EType type2);
 	bool checkFuncArgs(list<EType> decleration,list<ExpNode*>* callparams);
@@ -86,7 +98,7 @@
 	int mainFuncsCounter = 0;
 
 
-#line 90 "parser.tab.cpp" /* yacc.c:339  */
+#line 102 "parser.tab.cpp" /* yacc.c:339  */
 
 # ifndef YY_NULLPTR
 #  if defined __cplusplus && 201103L <= __cplusplus
@@ -171,7 +183,7 @@ int yyparse (void);
 
 /* Copy the second part of user declarations.  */
 
-#line 175 "parser.tab.cpp" /* yacc.c:358  */
+#line 187 "parser.tab.cpp" /* yacc.c:358  */
 
 #ifdef short
 # undef short
@@ -471,8 +483,8 @@ static const yytype_uint8 yytranslate[] =
   /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,    68,    68,    76,    77,    95,   101,   102,   104,   105,
-     107,   108,   119,   121,   212,   213,   214
+       0,    80,    80,    88,    89,   107,   113,   114,   116,   117,
+     119,   120,   131,   133,   223,   224,   225
 };
 #endif
 
@@ -1257,27 +1269,27 @@ yyreduce:
   switch (yyn)
     {
         case 2:
-#line 69 "parser.ypp" /* yacc.c:1646  */
+#line 81 "parser.ypp" /* yacc.c:1646  */
     {
 		//IDK what to write here...
 		if(mainFuncsCounter < 1)
 			errorMainMissing();
 	}
-#line 1267 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1279 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 3:
-#line 76 "parser.ypp" /* yacc.c:1646  */
+#line 88 "parser.ypp" /* yacc.c:1646  */
     {/*$$ = new FuncsListNode();*/}
-#line 1273 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1285 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 4:
-#line 78 "parser.ypp" /* yacc.c:1646  */
+#line 90 "parser.ypp" /* yacc.c:1646  */
     {
 		FuncNode* currFunc = (FuncNode*)(yyvsp[-1]);
 		FormalsListNode* currFormalsList = currFunc->formalsNode->formalsListNode;
-		if(((IdNode*)currFunc->id)->id == "main" && currFunc->retType->type == E_VOID && currFormalsList->formalDecls->empty())
+		if(((IdNode*)currFunc->id)->id == "main" && currFunc->retType->retType == E_VOID && currFormalsList->formalDecls->empty())
 		{
 			mainFuncsCounter++;
 			if(mainFuncsCounter > 1)
@@ -1290,50 +1302,50 @@ yyreduce:
 		(yyval) = (FuncsListNode*)(yyvsp[0]);
 		((FuncsListNode*)(yyval))->funcsList->push_back(*currFunc);
 	}
-#line 1294 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1306 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 5:
-#line 96 "parser.ypp" /* yacc.c:1646  */
+#line 108 "parser.ypp" /* yacc.c:1646  */
     {
 			// Check if return Statments return the appropirate type
 			// Check Formals IDs conflict
 		}
-#line 1303 "parser.tab.cpp" /* yacc.c:1646  */
-    break;
-
-  case 6:
-#line 101 "parser.ypp" /* yacc.c:1646  */
-    {(yyval) = (RetTypeNode*)(yyvsp[0]);}
-#line 1309 "parser.tab.cpp" /* yacc.c:1646  */
-    break;
-
-  case 7:
-#line 102 "parser.ypp" /* yacc.c:1646  */
-    {(yyval) = new VoidTypeNode();}
 #line 1315 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
-  case 8:
-#line 104 "parser.ypp" /* yacc.c:1646  */
-    {(yyval) = new FormalsNode((FormalsListNode*)(yyvsp[0]));}
+  case 6:
+#line 113 "parser.ypp" /* yacc.c:1646  */
+    {(yyval) = (RetTypeNode*)(yyvsp[0]);}
 #line 1321 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
-  case 9:
-#line 105 "parser.ypp" /* yacc.c:1646  */
-    {}
+  case 7:
+#line 114 "parser.ypp" /* yacc.c:1646  */
+    {(yyval) = new VoidTypeNode();}
 #line 1327 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
-  case 10:
-#line 107 "parser.ypp" /* yacc.c:1646  */
-    {  }
+  case 8:
+#line 116 "parser.ypp" /* yacc.c:1646  */
+    {(yyval) = new FormalsNode((FormalsListNode*)(yyvsp[0]));}
 #line 1333 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
+  case 9:
+#line 117 "parser.ypp" /* yacc.c:1646  */
+    {}
+#line 1339 "parser.tab.cpp" /* yacc.c:1646  */
+    break;
+
+  case 10:
+#line 119 "parser.ypp" /* yacc.c:1646  */
+    {  }
+#line 1345 "parser.tab.cpp" /* yacc.c:1646  */
+    break;
+
   case 11:
-#line 109 "parser.ypp" /* yacc.c:1646  */
+#line 121 "parser.ypp" /* yacc.c:1646  */
     {
 				FormalDeclNode* currFormalDecl = (FormalDeclNode*)(yyvsp[-2]);
 				
@@ -1343,41 +1355,41 @@ yyreduce:
 				(yyval) = (FormalsListNode*)(yyvsp[-1]);
 				((FormalsListNode*)(yyval))->formalDecls->push_back(*currFormalDecl);
 			}
-#line 1347 "parser.tab.cpp" /* yacc.c:1646  */
-    break;
-
-  case 12:
-#line 119 "parser.ypp" /* yacc.c:1646  */
-    { (yyval) = new FormalDeclNode((TypeNode*)(yyvsp[-1]),(IdNode*)(yyvsp[0]));}
-#line 1353 "parser.tab.cpp" /* yacc.c:1646  */
-    break;
-
-  case 13:
-#line 121 "parser.ypp" /* yacc.c:1646  */
-    {  }
 #line 1359 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
-  case 14:
-#line 212 "parser.ypp" /* yacc.c:1646  */
-    {(yyval) = new TypeNode(E_INTEGER);}
+  case 12:
+#line 131 "parser.ypp" /* yacc.c:1646  */
+    { (yyval) = new FormalDeclNode((TypeNode*)(yyvsp[-1]),(IdNode*)(yyvsp[0]));}
 #line 1365 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
-  case 15:
-#line 213 "parser.ypp" /* yacc.c:1646  */
-    {(yyval) = new TypeNode(E_BYTE);}
+  case 13:
+#line 133 "parser.ypp" /* yacc.c:1646  */
+    {  }
 #line 1371 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
-  case 16:
-#line 214 "parser.ypp" /* yacc.c:1646  */
-    {(yyval) = new TypeNode(E_BOOLEAN);}
+  case 14:
+#line 223 "parser.ypp" /* yacc.c:1646  */
+    {(yyval) = new TypeNode(E_INTEGER);}
 #line 1377 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
+  case 15:
+#line 224 "parser.ypp" /* yacc.c:1646  */
+    {(yyval) = new TypeNode(E_BYTE);}
+#line 1383 "parser.tab.cpp" /* yacc.c:1646  */
+    break;
 
-#line 1381 "parser.tab.cpp" /* yacc.c:1646  */
+  case 16:
+#line 225 "parser.ypp" /* yacc.c:1646  */
+    {(yyval) = new TypeNode(E_BOOLEAN);}
+#line 1389 "parser.tab.cpp" /* yacc.c:1646  */
+    break;
+
+
+#line 1393 "parser.tab.cpp" /* yacc.c:1646  */
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires
@@ -1605,7 +1617,7 @@ yyreturn:
 #endif
   return yyresult;
 }
-#line 331 "parser.ypp" /* yacc.c:1906  */
+#line 349 "parser.ypp" /* yacc.c:1906  */
 
 
 int main()
@@ -1655,13 +1667,42 @@ std::vector<string> ListToVector(const list<EType>  list )
 	}
 	return vec;
 }
+
+bool isExist(string elementName)
+{
+	list<list<elementData> >::const_iterator end = vartable.end();
+	for(list<list<elementData> >::const_iterator element = vartable.begin()  ; element!=end ;  element++ )
+	{
+		list<elementData>::const_iterator lend = (*element).end();
+		for(list<elementData>::const_iterator lentry = (*element).begin()  ; lentry != lend ; lentry++)
+		{
+			if((*lentry).name == elementName ) 
+				return true ;
+		}
+	}
+	return false ; 
+}
+elementData get_exists_element(string elementName){
+	
+	list<list<elementData> >::const_iterator end = vartable.end();
+	for(list<list<elementData> >::const_iterator element = vartable.begin()  ; element!=end ;  element++ )
+	{
+		 list<elementData>::const_iterator lend = (*element).end();
+		for(list<elementData>::const_iterator elementData = (*element).begin()  ; elementData != lend ; elementData++)
+		{
+			if((*elementData).name == elementName ) 
+				return (*elementData) ;
+		}
+	}
+}
+
 bool checkFuncArgs(list<EType> decleration,list<ExpNode*>* callparams){
 
 	if(decleration.size() != callparams->size()) return false;
 	list<ExpNode*>::const_iterator element2 = callparams->begin();
 	for(list<EType>::const_iterator element = decleration.begin()  ; element!=decleration.end() ;  ++element ,++element2)
 	{	
-		if(!isLegalCoersion((*element2)->type,*element)) return false;
+		if(!isLegalCoersion((*element2)->expType,*element)) return false;
 	}
 	return true;
 }
