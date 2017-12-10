@@ -115,7 +115,7 @@ struct IdExpNode : ExpNode
 {
 	IdNode* idNode;
 	
-	IdExpNode(IdNode* idNode, EType type) : ExpNode(type){
+	IdExpNode(IdNode* idNode, EType type): ExpNode(type){
 		this->idNode = idNode;
 	}
 };

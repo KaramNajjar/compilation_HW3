@@ -31,6 +31,8 @@
 	std::vector<string> ListToVector(const list<EType> list);
 	bool expListExist = false;
 	int mainFuncsCounter = 0;
+	bool isExist(string elementName);
+	elementData get_exists_element(string elementName);
 
 %}
 
@@ -77,7 +79,7 @@
 
 
 
-Prog : Funcs 
+Prog : Exp Funcs 
 	{
 		//IDK what to write here...
 		if(mainFuncsCounter < 1)
@@ -135,7 +137,8 @@ Statments : ID {  }
 	
 Call : ID LPAREN ExpList RPAREN	//First_Finish
 	{
-		$$ = new CallNode((IdNode*)$1);
+		
+		//$$ = new CallNode((IdNode*)$1); Search in vtable and send type to constructor
 		//if(ID exist)
 		{
 			//elementData entry=get_exists_variable(vartable,$1.name);
@@ -154,7 +157,7 @@ Call : ID LPAREN ExpList RPAREN	//First_Finish
 		}
 		//else
 		{
-			$$->type = E_VOID;
+			((CallNode*)$$)->callType = E_VOID;
 			if(((IdNode*)$1)->id == "print"){
 				//print function
 					list<EType> l = list<EType>();
@@ -231,19 +234,19 @@ Exp : LPAREN Exp RPAREN { $$ = $2; }
 			cout << "Binop exp started " << endl;
 			
 			
-			if((((ExpNode*)$1))->type != E_INTEGER && (((ExpNode*)$1))->type != E_BYTE)
+			if((((ExpNode*)$1))->expType != E_INTEGER && (((ExpNode*)$1))->expType != E_BYTE)
 			{
 				errorMismatch(yylineno);
 				exit(1);
 			}
-			if((((ExpNode*)$1))->type != (((ExpNode*)$3))->type)
+			if((((ExpNode*)$1))->expType != (((ExpNode*)$3))->expType)
 			{
 				errorMismatch(yylineno);
 				exit(1);
 			}
 			
 			$$ = new BinExpNode(((ExpNode*)$1),(BinOpNode*)$2,((ExpNode*)$3)); 
-			((ExpNode*)$$)->type = (((ExpNode*)$1))->type;
+			((ExpNode*)$$)->expType = (((ExpNode*)$1))->expType;
 			
 			cout << "Binop exp finished" << endl;
 
@@ -252,30 +255,29 @@ Exp : LPAREN Exp RPAREN { $$ = $2; }
 	| ID //First_Finish
 		{
 			cout << "ID exp started" << endl;
-			if(isExist($1->id) == false){
-						errorUndef(yylineno,$1.name.c_str());
+			if(isExist(((IdNode*)$1)->id) == false){
+						errorUndef(yylineno,((IdNode*)$1)->id.c_str());
 						exit(1);
 			}
 			// check if identefier type is legal
-			elementData eData = get_exists_element($1->id)
-			if(eData->isFunc)
+			elementData eData = get_exists_element(((IdNode*)$1)->id);
+			if(eData.isFunc)
 			{
-				errorUndef(yylineno,$1.name.c_str());
+				errorUndef(yylineno,((IdNode*)$1)->id.c_str());
 				exit(1);
 			}
 				
-			
-			$$ = new IdExpNode((IdNode*)$1); 
+			$$ = new IdExpNode((IdNode*)$1,eData.type); 
 			cout << "ID exp finished" << endl;
 		}
 	| Call //First_Finish , not sure
 		{
-			if($1->type == E_VOID){
+			if(((CallNode*)$1)->callType == E_VOID){
 				errorMismatch(yylineno);
 				exit(1);
 			}
 			// Get funcDecl by Id and Check RetType of FuncDecl
-			$$->type = $1->type;
+			((ExpNode*)$$)->expType = ((CallNode*)$1)->callType;
 		}
 	| NUM //First_Finish
 		{ 
@@ -314,7 +316,7 @@ Exp : LPAREN Exp RPAREN { $$ = $2; }
 	| FALSE		{$$ = new BoolExpNode((BoolNode*)$1);}//First_Finish
 	| NOT Exp	//First_Finish
 		{
-			if((((ExpNode*)$2))->type != E_BOOLEAN){
+			if((((ExpNode*)$2))->expType != E_BOOLEAN){
 				errorMismatch(yylineno);
 				exit(1);
 			 }
@@ -322,7 +324,7 @@ Exp : LPAREN Exp RPAREN { $$ = $2; }
 		}
 	| Exp OR Exp  //First_Finish
 		{
-			if(((ExpNode*)$1)->type != E_BOOLEAN || ((ExpNode*)$3)->type != E_BOOLEAN ){
+			if(((ExpNode*)$1)->expType != E_BOOLEAN || ((ExpNode*)$3)->expType != E_BOOLEAN ){
 				errorMismatch(yylineno);
 				exit(1);
 			 }
@@ -330,7 +332,7 @@ Exp : LPAREN Exp RPAREN { $$ = $2; }
 		}
 	| Exp AND Exp //First_Finish
 		{
-			if(((ExpNode*)$1)->type != E_BOOLEAN || ((ExpNode*)$3)->type != E_BOOLEAN ){
+			if(((ExpNode*)$1)->expType != E_BOOLEAN || ((ExpNode*)$3)->expType != E_BOOLEAN ){
 				errorMismatch(yylineno);
 				exit(1);
 			 }
@@ -338,14 +340,12 @@ Exp : LPAREN Exp RPAREN { $$ = $2; }
 		}
 	| Exp RELOP Exp	//First_Finish
 		{
-			if(((ExpNode*)$1)->type != E_INTEGER || ((ExpNode*)$3)->type != E_INTEGER ){
+			if(((ExpNode*)$1)->expType != E_INTEGER || ((ExpNode*)$3)->expType != E_INTEGER ){
 				errorMismatch(yylineno);
 				exit(1);
 			 }
 			 $$ = new ExpNode(E_BOOLEAN);
 		};
-	
-
 %%
 
 int main()
