@@ -18,6 +18,7 @@
 	bool checkFuncArgs(list<EType> decleration,list<ExpNode*>* callparams);
 	std::vector<string> ListToVector(const list<EType> list);
 	bool expListExist = false;
+	int mainFuncsCounter = 0;
 
 %}
 
@@ -63,7 +64,63 @@
 %%
 
 
-Prog : Exp { cout << "Prog exp: " << endl; } ;//First_Finish
+
+Prog : Funcs 
+	{
+		//IDK what to write here...
+		if(mainFuncsCounter < 1)
+			errorMainMissing();
+	}
+	
+Funcs 
+	: {/*$$ = new FuncsListNode();*/}
+	| FuncDecl Funcs 
+	{
+		FuncNode* currFunc = (FuncNode*)$1;
+		FormalsListNode* currFormalsList = currFunc->formalsNode->formalsListNode;
+		if(((IdNode*)currFunc->id)->id == "main" && currFunc->retType->type == E_VOID && currFormalsList->formalDecls->empty())
+		{
+			mainFuncsCounter++;
+			if(mainFuncsCounter > 1)
+				errorMainMissing();// Delete this and Threw an appropirate error...
+		}
+		
+		if($2 == NULL)
+			$2 = new FuncsListNode();
+		
+		$$ = (FuncsListNode*)$2;
+		((FuncsListNode*)$$)->funcsList->push_back(*currFunc);
+	} 
+
+FuncDecl : RetType ID LPAREN Formals RPAREN LBRACE Statments RBRACE
+		{
+			// Check if return Statments return the appropirate type
+			// Check Formals IDs conflict
+		}
+		
+RetType : Type {$$ = (RetTypeNode*)$1;}
+		| VOID {$$ = new VoidTypeNode();}
+		
+Formals : FormalsList {$$ = new FormalsNode((FormalsListNode*)$1);}
+		| {}
+		
+FormalsList : FormalDecl {  }
+			| FormalDecl COMMA FormalsList
+			{
+				FormalDeclNode* currFormalDecl = (FormalDeclNode*)$1;
+				
+				if($3 == NULL)
+					$3 = new FormalsListNode();
+		
+				$$ = (FormalsListNode*)$2;
+				((FormalsListNode*)$$)->formalDecls->push_back(*currFormalDecl);
+			}
+			
+FormalDecl : Type ID { $$ = new FormalDeclNode((TypeNode*)$1,(IdNode*)$2);}
+
+Statments : Statement {  }
+		| 
+	
 Call : ID LPAREN ExpList RPAREN	//First_Finish
 	{
 		$$ = new CallNode((IdNode*)$1);
@@ -160,7 +217,7 @@ ExpList: Exp COMMA ExpList  //First_Finish
 		
 Type 	: 	INT 	{$$ = new TypeNode(E_INTEGER);} //First_Finish
 		|	BYTE  	{$$ = new TypeNode(E_BYTE);}
-		|	BOOL 	{$$ = new TypeNode(E_BOOL);};
+		|	BOOL 	{$$ = new TypeNode(E_BOOLEAN);};
 		
 Exp : LPAREN Exp RPAREN { $$ = $2; }
 		
@@ -205,6 +262,7 @@ Exp : LPAREN Exp RPAREN { $$ = $2; }
 				errorMismatch(yylineno);
 				exit(1);
 			}
+			// Check RetType of FuncDecl
 			$$->type = $1->type;
 		}
 	| NUM //First_Finish
