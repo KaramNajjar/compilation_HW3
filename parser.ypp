@@ -5,6 +5,7 @@
 	#include <typeinfo>
 	#include <string.h>
 	#include <stdbool.h>
+	#include <stack> 
 	#include <iostream>
 	using namespace std;
 	using namespace output;
@@ -13,6 +14,16 @@
 	extern int yylineno;
 	extern int yylex();
 
+	typedef struct  {
+		string name;
+		E_TYPE type;
+		int offset;
+		list<E_TYPE> params;  // only used for functions
+		E_TYPE retType ; 		// only used for functions
+	}elementData;
+	
+	list<list<elementData> > vartable;
+	stack<int> offsets;
 
 	bool isLegalCoersion(EType type1,EType type2);
 	bool checkFuncArgs(list<EType> decleration,list<ExpNode*>* callparams);
@@ -118,15 +129,15 @@ FormalsList : FormalDecl {  }
 			
 FormalDecl : Type ID { $$ = new FormalDeclNode((TypeNode*)$1,(IdNode*)$2);}
 
-Statments : Statement {  }
-		| 
+Statments : ID {  }
+
 	
 Call : ID LPAREN ExpList RPAREN	//First_Finish
 	{
 		$$ = new CallNode((IdNode*)$1);
 		//if(ID exist)
 		{
-			//listEntry entry=get_exists_variable(vartable,$1.name);
+			//elementData entry=get_exists_variable(vartable,$1.name);
 			
 		//if(entry->type != E_FUNC)
 			{
@@ -182,7 +193,7 @@ Call : ID LPAREN ExpList RPAREN	//First_Finish
 			errorUndefFunc(yylineno,((IdNode*)$1)->id.c_str());
 			exit(1);
 		}
-		//listEntry entry=get_exists_variable(vartable,$1.name.c_str());
+		//elementData entry=get_exists_variable(vartable,$1.name.c_str());
 		//if(entry.type != E_FUNC)
 		{
 			errorUndefFunc(yylineno,((IdNode*)$1)->id.c_str());
@@ -199,20 +210,13 @@ Call : ID LPAREN ExpList RPAREN	//First_Finish
 
 ExpList: Exp COMMA ExpList  //First_Finish
 		{
-			if(expListExist == false)
-				$$ = new ExpListNode();
-			
-			expListExist = true;
+			$$ = $2;
 			(((ExpListNode*)$$)->params)->push_front((ExpNode*)$1);
 		};
 		|Exp
 		{
-			if(expListExist == false)
-				$$ = new ExpListNode();
-			
-			
+			$$ = new ExpListNode();
 			(((ExpListNode*)$$)->params)->push_front((ExpNode*)$1);
-			expListExist = false;
 		};
 		
 Type 	: 	INT 	{$$ = new TypeNode(E_INTEGER);} //First_Finish
@@ -247,11 +251,14 @@ Exp : LPAREN Exp RPAREN { $$ = $2; }
 	| ID //First_Finish
 		{
 			cout << "ID exp started" << endl;
-			//if(isExist(vartable,$1.name)!=1){
-			//			errorUndef(yylineno,$1.name.c_str());
-			//			exit(1);
-			//}
+			if(isExist($1->id) == false){
+						errorUndef(yylineno,$1.name.c_str());
+						exit(1);
+			}
 			// check if identefier type is legal
+			elementData eData = get_exists_element($1->id)
+			if(eData->)
+				
 			
 			$$ = new IdExpNode((IdNode*)$1); 
 			cout << "ID exp finished" << endl;
@@ -262,7 +269,7 @@ Exp : LPAREN Exp RPAREN { $$ = $2; }
 				errorMismatch(yylineno);
 				exit(1);
 			}
-			// Check RetType of FuncDecl
+			// Get funcDecl by Id and Check RetType of FuncDecl
 			$$->type = $1->type;
 		}
 	| NUM //First_Finish
@@ -383,6 +390,35 @@ std::vector<string> ListToVector(const list<EType>  list )
 	}
 	return vec;
 }
+
+bool isExist(string elementName)
+{
+	list<list<elementData> >::const_iterator end = vartable.end();
+	for(list<list<elementData> >::const_iterator element = vartable.begin()  ; element!=end ;  element++ )
+	{
+		list<elementData>::const_iterator lend = (*element).end();
+		for(list<elementData>::const_iterator lentry = (*element).begin()  ; lentry != lend ; lentry++)
+		{
+			if((*lentry).name == elementName ) 
+				return true ;
+		}
+	}
+	return false ; 
+}
+elementData get_exists_element(string elementName){
+	
+	list<list<elementData> >::const_iterator end = table.end();
+	for(list<list<elementData> >::const_iterator element = table.begin()  ; element!=end ;  element++ )
+	{
+		 list<elementData>::const_iterator lend = (*element).end();
+		for(list<elementData>::const_iterator element = (*element).begin()  ; element != lend ; element++)
+		{
+			if((*element).name == elementName ) 
+				return (*element) ;
+		}
+	}
+}
+
 bool checkFuncArgs(list<EType> decleration,list<ExpNode*>* callparams){
 
 	if(decleration.size() != callparams->size()) return false;
