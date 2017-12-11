@@ -1,8 +1,8 @@
-/* A Bison parser, made by GNU Bison 3.0.4.  */
+/* A Bison parser, made by GNU Bison 3.0.2.  */
 
 /* Bison implementation for Yacc-like parsers in C
 
-   Copyright (C) 1984, 1989-1990, 2000-2015 Free Software Foundation, Inc.
+   Copyright (C) 1984, 1989-1990, 2000-2013 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -44,7 +44,7 @@
 #define YYBISON 1
 
 /* Bison version.  */
-#define YYBISON_VERSION "3.0.4"
+#define YYBISON_VERSION "3.0.2"
 
 /* Skeleton name.  */
 #define YYSKELETON_NAME "yacc.c"
@@ -72,35 +72,43 @@
 	#include <stdbool.h>
 	#include <stack> 
 	#include <iostream>
+	
+	//Namespaces
 	using namespace std;
 	using namespace output;
 
-	int yyerror(string message);
-	extern int yylineno;
-	extern int yylex();
-
-	typedef struct  {
-		string name;
+	typedef struct {
+		string id;
 		EType type;
 		int offset;
 		list<EType> params;  // only used for functions
 		EType retType; 		// only used for functions
-		bool isFunc;
 	}elementData;
 	
-	list<list<elementData> > vartable;
-	stack<int> offsets;
-
-	bool isLegalCoersion(EType type1,EType type2);
+	//Functions Declerations
+	int yyerror(string message);
+	extern int yylineno;
+	extern int yylex();
+	void CreateScope();
+	void DestroyScope();
+	bool isLegalAssignment(EType type1,EType type2);
 	bool checkFuncArgs(list<EType> decleration,list<ExpNode*>* callparams);
-	std::vector<string> ListToVector(const list<EType> list);
-	bool expListExist = false;
-	int mainFuncsCounter = 0;
+	std::vector<string>* ListToVector(const list<EType> list);
 	bool isExist(string elementName);
 	elementData get_exists_element(string elementName);
+	
+	//Variables Defenitions
+	list<list<elementData> > vartable;
+	stack<int> offsets;
+	static bool expListExist = false;
+	static bool statementStarted = false;
+	static bool insideSwitch = false;
+	static bool insideWhile = false;
+	static int mainFuncsCounter = 0;
 
+	
 
-#line 104 "parser.tab.cpp" /* yacc.c:339  */
+#line 112 "parser.tab.cpp" /* yacc.c:339  */
 
 # ifndef YY_NULLPTR
 #  if defined __cplusplus && 201103L <= __cplusplus
@@ -185,7 +193,7 @@ int yyparse (void);
 
 /* Copy the second part of user declarations.  */
 
-#line 189 "parser.tab.cpp" /* yacc.c:358  */
+#line 197 "parser.tab.cpp" /* yacc.c:358  */
 
 #ifdef short
 # undef short
@@ -427,16 +435,16 @@ union yyalloc
 /* YYFINAL -- State number of the termination state.  */
 #define YYFINAL  15
 /* YYLAST -- Last index in YYTABLE.  */
-#define YYLAST   71
+#define YYLAST   169
 
 /* YYNTOKENS -- Number of terminals.  */
 #define YYNTOKENS  34
 /* YYNNTS -- Number of nonterminals.  */
-#define YYNNTS  13
+#define YYNNTS  26
 /* YYNRULES -- Number of rules.  */
-#define YYNRULES  33
+#define YYNRULES  60
 /* YYNSTATES -- Number of states.  */
-#define YYNSTATES  54
+#define YYNSTATES  117
 
 /* YYTRANSLATE[YYX] -- Symbol number corresponding to YYX as returned
    by yylex, with out-of-bounds checking.  */
@@ -485,10 +493,13 @@ static const yytype_uint8 yytranslate[] =
   /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_uint16 yyrline[] =
 {
-       0,    82,    82,    90,    91,   109,   115,   116,   118,   119,
-     121,   122,   133,   135,   138,   193,   215,   220,   226,   227,
-     228,   230,   232,   255,   273,   282,   292,   307,   315,   316,
-     317,   325,   333,   341
+       0,    90,    90,    98,    99,   117,   123,   124,   126,   127,
+     129,   130,   141,   143,   144,   146,   150,   154,   158,   170,
+     171,   179,   188,   187,   198,   197,   213,   222,   230,   230,
+     221,   232,   233,   233,   235,   236,   238,   238,   239,   239,
+     241,   271,   285,   304,   309,   315,   316,   317,   319,   321,
+     344,   355,   364,   374,   389,   397,   398,   399,   407,   415,
+     423
 };
 #endif
 
@@ -502,8 +513,9 @@ static const char *const yytname[] =
   "WHILE", "SWITCH", "CASE", "DEFAULT", "BREAK", "COLON", "SC", "COMMA",
   "LPAREN", "RPAREN", "LBRACE", "RBRACE", "ASSIGN", "NUM", "ID", "STRING",
   "ELSE", "$accept", "Prog", "Funcs", "FuncDecl", "RetType", "Formals",
-  "FormalsList", "FormalDecl", "Statments", "Call", "ExpList", "Type",
-  "Exp", YY_NULLPTR
+  "FormalsList", "FormalDecl", "Statements", "Statement", "$@1", "$@2",
+  "$@3", "$@4", "$@5", "IfContinue", "$@6", "CaseList", "CaseDec", "$@7",
+  "$@8", "Call", "CheckFunc", "ExpList", "Type", "Exp", YY_NULLPTR
 };
 #endif
 
@@ -519,10 +531,10 @@ static const yytype_uint16 yytoknum[] =
 };
 # endif
 
-#define YYPACT_NINF -7
+#define YYPACT_NINF -55
 
 #define yypact_value_is_default(Yystate) \
-  (!!((Yystate) == (-7)))
+  (!!((Yystate) == (-55)))
 
 #define YYTABLE_NINF -1
 
@@ -531,14 +543,20 @@ static const yytype_uint16 yytoknum[] =
 
   /* YYPACT[STATE-NUM] -- Index in YYTABLE of the portion describing
      STATE-NUM.  */
-static const yytype_int8 yypact[] =
+static const yytype_int16 yypact[] =
 {
-      -1,    -1,    -7,    -7,    -1,     8,    -6,    -7,    48,    -7,
-      33,    -7,    -3,    -7,    -4,    -7,    -1,    -1,    -1,    -1,
-      -7,    -7,    -7,    -7,    -7,    38,    22,    -7,    -7,    -7,
-      32,     1,    51,     9,    53,    -7,    -7,    35,    -7,    -1,
-      43,    -7,    36,    -7,    37,    34,    39,    43,    -7,    40,
-      -7,    -7,    41,    -7
+     121,   121,   -55,   -55,   121,    -7,    -5,   -55,    29,   -55,
+     158,   -55,     4,   -55,   -55,   -55,   121,   121,   121,   121,
+     -55,   -55,   -55,   -55,   -55,    38,     5,   -55,   -55,    97,
+      53,    58,    25,   -55,   -55,    30,   -55,    35,     9,    42,
+     -55,   121,    50,   -55,    44,    47,   -55,    52,    42,   -55,
+      87,   -55,   107,    60,    61,    63,    68,   -55,    12,    66,
+     -55,    69,    70,   -55,    20,   121,   121,   121,   -55,   121,
+     -55,   -55,   -55,    -1,   -55,   144,   144,   144,    67,   -55,
+     121,    73,    74,    80,   -55,   137,    87,   -55,    87,    62,
+     -55,    79,   -55,   -55,   -55,    88,    87,    83,    89,    88,
+     -55,    17,   -55,   -55,    93,   -55,   101,   -55,    87,   -55,
+      87,    95,   104,   103,   108,   -55,   -55
 };
 
   /* YYDEFACT[STATE-NUM] -- Default reduction number in state STATE-NUM.
@@ -546,26 +564,34 @@ static const yytype_int8 yypact[] =
      means the default is an error.  */
 static const yytype_uint8 yydefact[] =
 {
-       0,     0,    28,    29,     0,    25,    23,    27,     0,    24,
-       3,    30,     0,    26,     0,     1,     0,     0,     0,     0,
-       7,    18,    19,    20,     2,     3,     0,     6,    21,    15,
-       0,    17,    32,    31,    33,    22,     4,     0,    14,     0,
-       9,    16,     0,     8,    10,     0,     0,     0,    12,     0,
-      11,    13,     0,     5
+       0,     0,    55,    56,     0,    52,    50,    54,     0,    51,
+       3,    57,     0,    53,    42,     1,     0,     0,     0,     0,
+       7,    45,    46,    47,     2,     3,     0,     6,    48,     0,
+      59,    58,    60,    49,     4,     0,    41,     0,    44,     9,
+      40,     0,     0,     8,    10,     0,    43,     0,     0,    12,
+       0,    11,     0,     0,     0,     0,     0,    15,     0,     0,
+      14,     0,     0,    20,     0,     0,     0,     0,    26,     0,
+       5,    13,    19,     0,    21,    22,    24,    27,     0,    16,
+       0,     0,     0,     0,    18,     0,     0,    23,     0,     0,
+      17,    31,    25,    28,    32,     0,     0,     0,     0,    35,
+      33,     0,    29,    34,     0,    36,     0,    38,     0,    30,
+       0,     0,     0,     0,     0,    37,    39
 };
 
   /* YYPGOTO[NTERM-NUM].  */
 static const yytype_int8 yypgoto[] =
 {
-      -7,    -7,    42,    -7,    -7,    -7,    17,    -7,    -7,    -7,
-      24,     3,    16
+     -55,   -55,   111,   -55,   -55,   -55,    96,   -55,   -55,   -54,
+     -55,   -55,   -55,   -55,   -55,   -55,   -55,    46,   -55,   -55,
+     -55,   -48,   -55,   113,    -4,     0
 };
 
   /* YYDEFGOTO[NTERM-NUM].  */
 static const yytype_int8 yydefgoto[] =
 {
-      -1,     8,    24,    25,    26,    42,    43,    44,    52,     9,
-      30,    27,    31
+      -1,     8,    24,    25,    26,    42,    43,    44,    59,    60,
+      81,    82,    83,    95,   106,    87,    96,    98,    99,   108,
+     110,     9,    29,    37,    62,    38
 };
 
   /* YYTABLE[YYPACT[STATE-NUM]] -- What to do in state STATE-NUM.  If
@@ -573,56 +599,86 @@ static const yytype_int8 yydefgoto[] =
      number is the opposite.  If YYTABLE_NINF, syntax error.  */
 static const yytype_uint8 yytable[] =
 {
-      16,    17,    18,    19,    16,    17,    18,    19,     1,     2,
-       3,     1,     2,     3,    18,    19,    10,    11,    13,    14,
-      12,     4,    29,    28,     4,    39,     5,     6,     7,     5,
-       6,     7,    32,    33,    34,    35,    16,    17,    18,    19,
-      20,    21,    22,    45,    23,    20,    21,    22,    15,    23,
-      45,    21,    22,    37,    23,    17,    18,    19,    38,    19,
-      40,    47,    46,    41,    50,    48,    49,    36,     0,    53,
-       0,    51
+      10,    11,    61,    13,    12,    71,    27,    16,    17,    18,
+      19,    61,    16,    17,    18,    19,    30,    31,    32,    33,
+      14,    27,    79,    16,    17,    18,    19,   104,    80,    15,
+      28,    19,    91,    41,    92,    45,    35,    14,    61,   105,
+      61,    69,   100,    74,    45,    20,    21,    22,    61,    23,
+      21,    22,    64,    23,   111,    39,   112,    17,    18,    19,
+      61,    40,    61,    18,    19,    75,    76,    77,    48,    78,
+      16,    17,    18,    19,    21,    22,    47,    23,    49,    50,
+      85,    52,    53,    54,    55,    65,    66,    56,    67,    93,
+      84,    68,    72,    57,    70,    21,    22,    58,    23,    86,
+      88,    73,    52,    53,    54,    55,    89,    97,    56,     1,
+       2,     3,    94,   101,    57,   107,   113,   102,    58,     1,
+       2,     3,     4,    36,   109,   114,   115,     5,     6,     7,
+      63,   116,     4,     1,     2,     3,    34,     5,     6,     7,
+      16,    17,    18,    19,    51,   103,     4,    16,    17,    18,
+      19,     5,     6,     7,    46,     0,     0,     0,     0,     0,
+      90,    16,    17,    18,    19,    20,    21,    22,     0,    23
 };
 
 static const yytype_int8 yycheck[] =
 {
-       3,     4,     5,     6,     3,     4,     5,     6,    12,    13,
-      14,    12,    13,    14,     5,     6,     0,     1,    10,    25,
-       4,    25,    26,    26,    25,    24,    30,    31,    32,    30,
-      31,    32,    16,    17,    18,    19,     3,     4,     5,     6,
-       7,     8,     9,    40,    11,     7,     8,     9,     0,    11,
-      47,     8,     9,    31,    11,     4,     5,     6,    26,     6,
-      25,    24,    26,    39,    47,    31,    27,    25,    -1,    28,
-      -1,    31
+       0,     1,    50,    10,     4,    59,    10,     3,     4,     5,
+       6,    59,     3,     4,     5,     6,    16,    17,    18,    19,
+      25,    25,    23,     3,     4,     5,     6,    10,    29,     0,
+      26,     6,    86,    24,    88,    39,    31,    25,    86,    22,
+      88,    29,    96,    23,    48,     7,     8,     9,    96,    11,
+       8,     9,    52,    11,   108,    25,   110,     4,     5,     6,
+     108,    26,   110,     5,     6,    65,    66,    67,    24,    69,
+       3,     4,     5,     6,     8,     9,    26,    11,    31,    27,
+      80,    15,    16,    17,    18,    25,    25,    21,    25,    27,
+      23,    23,    23,    27,    28,     8,     9,    31,    11,    26,
+      26,    31,    15,    16,    17,    18,    26,    19,    21,    12,
+      13,    14,    33,    30,    27,    22,    21,    28,    31,    12,
+      13,    14,    25,    26,    23,    21,    23,    30,    31,    32,
+      23,    23,    25,    12,    13,    14,    25,    30,    31,    32,
+       3,     4,     5,     6,    48,    99,    25,     3,     4,     5,
+       6,    30,    31,    32,    41,    -1,    -1,    -1,    -1,    -1,
+      23,     3,     4,     5,     6,     7,     8,     9,    -1,    11
 };
 
   /* YYSTOS[STATE-NUM] -- The (internal number of the) accessing
      symbol of state STATE-NUM.  */
 static const yytype_uint8 yystos[] =
 {
-       0,    12,    13,    14,    25,    30,    31,    32,    35,    43,
-      46,    46,    46,    10,    25,     0,     3,     4,     5,     6,
-       7,     8,     9,    11,    36,    37,    38,    45,    26,    26,
-      44,    46,    46,    46,    46,    46,    36,    31,    26,    24,
-      25,    44,    39,    40,    41,    45,    26,    24,    31,    27,
-      40,    31,    42,    28
+       0,    12,    13,    14,    25,    30,    31,    32,    35,    55,
+      59,    59,    59,    10,    25,     0,     3,     4,     5,     6,
+       7,     8,     9,    11,    36,    37,    38,    58,    26,    56,
+      59,    59,    59,    59,    36,    31,    26,    57,    59,    25,
+      26,    24,    39,    40,    41,    58,    57,    26,    24,    31,
+      27,    40,    15,    16,    17,    18,    21,    27,    31,    42,
+      43,    55,    58,    23,    59,    25,    25,    25,    23,    29,
+      28,    43,    23,    31,    23,    59,    59,    59,    59,    23,
+      29,    44,    45,    46,    23,    59,    26,    49,    26,    26,
+      23,    43,    43,    27,    33,    47,    50,    19,    51,    52,
+      43,    30,    28,    51,    10,    22,    48,    22,    53,    23,
+      54,    43,    43,    21,    21,    23,    23
 };
 
   /* YYR1[YYN] -- Symbol number of symbol that rule YYN derives.  */
 static const yytype_uint8 yyr1[] =
 {
        0,    34,    35,    36,    36,    37,    38,    38,    39,    39,
-      40,    40,    41,    42,    43,    43,    44,    44,    45,    45,
-      45,    46,    46,    46,    46,    46,    46,    46,    46,    46,
-      46,    46,    46,    46
+      40,    40,    41,    42,    42,    43,    43,    43,    43,    43,
+      43,    43,    44,    43,    45,    43,    43,    46,    47,    48,
+      43,    49,    50,    49,    51,    51,    53,    52,    54,    52,
+      55,    55,    56,    57,    57,    58,    58,    58,    59,    59,
+      59,    59,    59,    59,    59,    59,    59,    59,    59,    59,
+      59
 };
 
   /* YYR2[YYN] -- Number of symbols on the right hand side of rule YYN.  */
 static const yytype_uint8 yyr2[] =
 {
        0,     2,     2,     0,     2,     8,     1,     1,     1,     0,
-       1,     3,     2,     1,     4,     3,     3,     1,     1,     1,
-       1,     3,     3,     1,     1,     1,     2,     1,     1,     1,
-       2,     3,     3,     3
+       1,     3,     2,     2,     1,     1,     3,     5,     4,     2,
+       2,     3,     0,     5,     0,     6,     2,     0,     0,     0,
+      11,     2,     0,     5,     2,     1,     0,     7,     0,     8,
+       5,     4,     0,     3,     1,     1,     1,     1,     3,     3,
+       1,     1,     1,     2,     1,     1,     1,     2,     3,     3,
+       3
 };
 
 
@@ -1299,23 +1355,23 @@ yyreduce:
   switch (yyn)
     {
         case 2:
-#line 83 "parser.ypp" /* yacc.c:1646  */
+#line 91 "parser.ypp" /* yacc.c:1646  */
     {
 		//IDK what to write here...
 		if(mainFuncsCounter < 1)
 			errorMainMissing();
 	}
-#line 1309 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1365 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 3:
-#line 90 "parser.ypp" /* yacc.c:1646  */
+#line 98 "parser.ypp" /* yacc.c:1646  */
     {/*$$ = new FuncsListNode();*/}
-#line 1315 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1371 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 4:
-#line 92 "parser.ypp" /* yacc.c:1646  */
+#line 100 "parser.ypp" /* yacc.c:1646  */
     {
 		FuncNode* currFunc = (FuncNode*)(yyvsp[-1]);
 		FormalsListNode* currFormalsList = currFunc->formalsNode->formalsListNode;
@@ -1332,50 +1388,50 @@ yyreduce:
 		(yyval) = (FuncsListNode*)(yyvsp[0]);
 		((FuncsListNode*)(yyval))->funcsList->push_back(*currFunc);
 	}
-#line 1336 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1392 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 5:
-#line 110 "parser.ypp" /* yacc.c:1646  */
+#line 118 "parser.ypp" /* yacc.c:1646  */
     {
-			// Check if return Statments return the appropirate type
+			// Check if return Statements return the appropirate type
 			// Check Formals IDs conflict
 		}
-#line 1345 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1401 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 6:
-#line 115 "parser.ypp" /* yacc.c:1646  */
+#line 123 "parser.ypp" /* yacc.c:1646  */
     {(yyval) = (RetTypeNode*)(yyvsp[0]);}
-#line 1351 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1407 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 7:
-#line 116 "parser.ypp" /* yacc.c:1646  */
+#line 124 "parser.ypp" /* yacc.c:1646  */
     {(yyval) = new VoidTypeNode();}
-#line 1357 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1413 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 8:
-#line 118 "parser.ypp" /* yacc.c:1646  */
+#line 126 "parser.ypp" /* yacc.c:1646  */
     {(yyval) = new FormalsNode((FormalsListNode*)(yyvsp[0]));}
-#line 1363 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1419 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 9:
-#line 119 "parser.ypp" /* yacc.c:1646  */
+#line 127 "parser.ypp" /* yacc.c:1646  */
     {}
-#line 1369 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1425 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 10:
-#line 121 "parser.ypp" /* yacc.c:1646  */
+#line 129 "parser.ypp" /* yacc.c:1646  */
     {  }
-#line 1375 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1431 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 11:
-#line 123 "parser.ypp" /* yacc.c:1646  */
+#line 131 "parser.ypp" /* yacc.c:1646  */
     {
 				FormalDeclNode* currFormalDecl = (FormalDeclNode*)(yyvsp[-2]);
 				
@@ -1385,149 +1441,313 @@ yyreduce:
 				(yyval) = (FormalsListNode*)(yyvsp[-1]);
 				((FormalsListNode*)(yyval))->formalDecls->push_back(*currFormalDecl);
 			}
-#line 1389 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1445 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 12:
-#line 133 "parser.ypp" /* yacc.c:1646  */
+#line 141 "parser.ypp" /* yacc.c:1646  */
     { (yyval) = new FormalDeclNode((TypeNode*)(yyvsp[-1]),(IdNode*)(yyvsp[0]));}
-#line 1395 "parser.tab.cpp" /* yacc.c:1646  */
-    break;
-
-  case 13:
-#line 135 "parser.ypp" /* yacc.c:1646  */
-    {  }
-#line 1401 "parser.tab.cpp" /* yacc.c:1646  */
-    break;
-
-  case 14:
-#line 139 "parser.ypp" /* yacc.c:1646  */
-    {
-		
-		//$$ = new CallNode((IdNode*)$1); Search in vtable and send type to constructor
-		//if(ID exist)
-		{
-			//elementData entry=get_exists_variable(vartable,$1.name);
-			
-		//if(entry->type != E_FUNC)
-			{
-				errorUndefFunc(yylineno,((IdNode*)(yyvsp[-3]))->id.c_str());
-				exit(1);
-			}
-		//	if(checkFuncArgs(entry.params,$3.params) == false )
-		{
-				//errorPrototypeMismatch(yylineno,$1->id.c_str(),ListToVector(entry.params));
-				exit(1);
-			}
-			//$$->type = entry.retType;
-		}
-		//else
-		{
-			((CallNode*)(yyval))->callType = E_VOID;
-			if(((IdNode*)(yyvsp[-3]))->id == "print"){
-				//print function
-					list<EType> l = list<EType>();
-					l.push_back(E_STRING);
-				if(!checkFuncArgs(l,((ExpListNode*)(yyvsp[-1]))->params))
-				{
-					vector<string> v = vector<string>();
-					v.push_back("STRING");
-					errorPrototypeMismatch(yylineno,((IdNode*)(yyvsp[-3]))->id.c_str(),v);
-					exit(1);
-				}
-			}else if(((IdNode*)(yyvsp[-3]))->id == "printi")  {
-				//printi function
-				list<EType> l = list<EType>();
-				l.push_back(E_INTEGER);
-				if(!checkFuncArgs(l,((ExpListNode*)(yyvsp[-1]))->params)){
-					
-					vector<string> v = vector<string>();
-					v.push_back("INT");
-					
-					errorPrototypeMismatch(yylineno,((IdNode*)(yyvsp[-3]))->id.c_str(),v);
-					exit(1);
-				}
-				
-			}else{
-				errorUndefFunc(yylineno,((IdNode*)(yyvsp[-3]))->id.c_str());
-				exit(1);
-			}
-		}
-	
-		
-	}
-#line 1460 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1451 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 15:
-#line 194 "parser.ypp" /* yacc.c:1646  */
+#line 147 "parser.ypp" /* yacc.c:1646  */
     {
-		//if(isExist(vartable,$1.name) != 1 )
-		{
-			errorUndefFunc(yylineno,((IdNode*)(yyvsp[-2]))->id.c_str());
-			exit(1);
-		}
-		//elementData entry=get_exists_variable(vartable,$1.name.c_str());
-		//if(entry.type != E_FUNC)
-		{
-			errorUndefFunc(yylineno,((IdNode*)(yyvsp[-2]))->id.c_str());
-			exit(1);
-		}
-		//if(entry.params.size() != 0)
-		{
-			//errorPrototypeMismatch(yylineno,((IdNode*)$1)->id.c_str(),ListToVector(entry.params));
-			exit(1);
-		}
-		//$$.type = entry.retType;
-		
-		}
-#line 1485 "parser.tab.cpp" /* yacc.c:1646  */
+	
+			}
+#line 1459 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 16:
-#line 216 "parser.ypp" /* yacc.c:1646  */
+#line 151 "parser.ypp" /* yacc.c:1646  */
+    { 	
+
+			}
+#line 1467 "parser.tab.cpp" /* yacc.c:1646  */
+    break;
+
+  case 17:
+#line 155 "parser.ypp" /* yacc.c:1646  */
+    { 
+
+			}
+#line 1475 "parser.tab.cpp" /* yacc.c:1646  */
+    break;
+
+  case 18:
+#line 159 "parser.ypp" /* yacc.c:1646  */
+    {
+				if(isExist(((IdNode*)(yyvsp[-3]))->id) == false || get_exists_element(((IdNode*)(yyvsp[-3]))->id).type == E_FUNC){
+					errorUndef(yylineno,((IdNode*)(yyvsp[-3]))->id);
+					exit(1);	
+				}
+				if(isLegalAssignment(((ExpNode*)(yyvsp[-1]))->expType,get_exists_element(((IdNode*)(yyvsp[-3]))->id).type) == false){
+					errorMismatch(yylineno);
+					exit(1);
+				}
+			
+			}
+#line 1491 "parser.tab.cpp" /* yacc.c:1646  */
+    break;
+
+  case 20:
+#line 172 "parser.ypp" /* yacc.c:1646  */
+    {
+				//TODO : need to check if last functionDecl returns void
+				/*
+					errorMismatch(yylineno);
+					exit(1);
+				*/
+			}
+#line 1503 "parser.tab.cpp" /* yacc.c:1646  */
+    break;
+
+  case 21:
+#line 180 "parser.ypp" /* yacc.c:1646  */
+    {
+				//TODO : need to check if last functionDecl returns a type same as expType
+				/*
+					errorMismatch(yylineno);
+					exit(1);
+				*/
+			}
+#line 1515 "parser.tab.cpp" /* yacc.c:1646  */
+    break;
+
+  case 22:
+#line 188 "parser.ypp" /* yacc.c:1646  */
+    { 
+				statementStarted = true;
+				if(((ExpNode*)(yyvsp[0]))->expType != E_BOOLEAN)
+				{
+					errorMismatch(yylineno);
+					exit(1);
+				}
+
+			}
+#line 1529 "parser.tab.cpp" /* yacc.c:1646  */
+    break;
+
+  case 24:
+#line 198 "parser.ypp" /* yacc.c:1646  */
+    {
+				statementStarted = true;
+				insideWhile = true;
+				if(((ExpNode*)(yyvsp[0]))->expType != E_BOOLEAN)
+				{
+					errorMismatch(yylineno);
+					exit(1);
+				}
+				
+			}
+#line 1544 "parser.tab.cpp" /* yacc.c:1646  */
+    break;
+
+  case 25:
+#line 209 "parser.ypp" /* yacc.c:1646  */
+    {
+				statementStarted = false;
+				insideWhile = false;
+			}
+#line 1553 "parser.tab.cpp" /* yacc.c:1646  */
+    break;
+
+  case 26:
+#line 214 "parser.ypp" /* yacc.c:1646  */
+    {
+				if(insideSwitch == false && insideWhile == false)
+				{
+					errorUnexpectedBreak(yylineno);
+					exit(1);
+				}
+			}
+#line 1565 "parser.tab.cpp" /* yacc.c:1646  */
+    break;
+
+  case 27:
+#line 222 "parser.ypp" /* yacc.c:1646  */
+    {
+				EType expType = ((ExpNode*)(yyvsp[0]))->expType;
+				if(expType != E_INTEGER && expType != E_BYTE)
+				{
+					errorMismatch(yylineno);
+					exit(1);
+				}
+			}
+#line 1578 "parser.tab.cpp" /* yacc.c:1646  */
+    break;
+
+  case 28:
+#line 230 "parser.ypp" /* yacc.c:1646  */
+    {CreateScope(); insideSwitch = true;}
+#line 1584 "parser.tab.cpp" /* yacc.c:1646  */
+    break;
+
+  case 29:
+#line 230 "parser.ypp" /* yacc.c:1646  */
+    {DestroyScope();insideSwitch = false;}
+#line 1590 "parser.tab.cpp" /* yacc.c:1646  */
+    break;
+
+  case 31:
+#line 232 "parser.ypp" /* yacc.c:1646  */
+    {statementStarted = false;}
+#line 1596 "parser.tab.cpp" /* yacc.c:1646  */
+    break;
+
+  case 32:
+#line 233 "parser.ypp" /* yacc.c:1646  */
+    {statementStarted = true;}
+#line 1602 "parser.tab.cpp" /* yacc.c:1646  */
+    break;
+
+  case 33:
+#line 233 "parser.ypp" /* yacc.c:1646  */
+    {statementStarted = false;}
+#line 1608 "parser.tab.cpp" /* yacc.c:1646  */
+    break;
+
+  case 36:
+#line 238 "parser.ypp" /* yacc.c:1646  */
+    {statementStarted = true;}
+#line 1614 "parser.tab.cpp" /* yacc.c:1646  */
+    break;
+
+  case 37:
+#line 238 "parser.ypp" /* yacc.c:1646  */
+    {statementStarted = false;}
+#line 1620 "parser.tab.cpp" /* yacc.c:1646  */
+    break;
+
+  case 38:
+#line 239 "parser.ypp" /* yacc.c:1646  */
+    {statementStarted = true;}
+#line 1626 "parser.tab.cpp" /* yacc.c:1646  */
+    break;
+
+  case 39:
+#line 239 "parser.ypp" /* yacc.c:1646  */
+    {statementStarted = false;}
+#line 1632 "parser.tab.cpp" /* yacc.c:1646  */
+    break;
+
+  case 40:
+#line 242 "parser.ypp" /* yacc.c:1646  */
+    {
+			string idVal = ((IdNode*)(yyvsp[-4]))->id;
+			elementData data = get_exists_element(idVal);
+			if(idVal == "print" || idVal == "printi")
+			{
+					list<EType> decleration = list<EType>();
+					idVal == "print" ? decleration.push_back(E_STRING) : decleration.push_back(E_INTEGER);
+	
+					if(checkFuncArgs(decleration,((ExpListNode*)(yyvsp[-4]))->params) == false)
+					{
+						vector<string> v = vector<string>();
+						idVal == "print" ? v.push_back("STRING") : v.push_back("INT");;
+						errorPrototypeMismatch(yylineno,idVal,v);
+						exit(1);
+					}
+				(yyval) = new CallNode((IdNode*)(yyvsp[-4]),E_VOID);
+			}
+			else{
+				if(checkFuncArgs(data.params,((ExpListNode*)(yyvsp[-4]))->params) == false )
+				{
+						errorPrototypeMismatch(yylineno,idVal,*(ListToVector(data.params)));
+						exit(1);
+						
+				}
+				(yyval) = new CallNode((IdNode*)(yyvsp[-4]),data.retType);
+			}
+	
+	
+		}
+#line 1666 "parser.tab.cpp" /* yacc.c:1646  */
+    break;
+
+  case 41:
+#line 272 "parser.ypp" /* yacc.c:1646  */
+    {
+			string idVal = ((IdNode*)(yyvsp[-3]))->id;
+			elementData data = get_exists_element(idVal);
+	
+			if(data.params.size() != 0)
+			{
+				errorPrototypeMismatch(yylineno,idVal,*(ListToVector(data.params)));
+				exit(1);
+			}
+			(yyval) = new CallNode((IdNode*)(yyvsp[-3]),data.retType);
+		}
+#line 1682 "parser.tab.cpp" /* yacc.c:1646  */
+    break;
+
+  case 42:
+#line 285 "parser.ypp" /* yacc.c:1646  */
+    {
+		
+		string idVal = ((IdNode*)(yyvsp[0]))->id;
+		if(idVal != "print" && idVal != "printi"){
+			if(isExist(idVal) == false)
+			{
+				errorUndefFunc(yylineno,idVal);
+				exit(1);
+			}
+			elementData data = get_exists_element(idVal);
+			if(data.type != E_FUNC)
+			{
+				errorUndefFunc(yylineno,idVal);
+				exit(1);
+			}
+		}
+
+	}
+#line 1705 "parser.tab.cpp" /* yacc.c:1646  */
+    break;
+
+  case 43:
+#line 305 "parser.ypp" /* yacc.c:1646  */
     {
 			(yyval) = (yyvsp[-1]);
 			(((ExpListNode*)(yyval))->params)->push_front((ExpNode*)(yyvsp[-2]));
 		}
-#line 1494 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1714 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
-  case 17:
-#line 221 "parser.ypp" /* yacc.c:1646  */
+  case 44:
+#line 310 "parser.ypp" /* yacc.c:1646  */
     {
 			(yyval) = new ExpListNode();
 			(((ExpListNode*)(yyval))->params)->push_front((ExpNode*)(yyvsp[0]));
 		}
-#line 1503 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1723 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
-  case 18:
-#line 226 "parser.ypp" /* yacc.c:1646  */
+  case 45:
+#line 315 "parser.ypp" /* yacc.c:1646  */
     {(yyval) = new TypeNode(E_INTEGER);}
-#line 1509 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1729 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
-  case 19:
-#line 227 "parser.ypp" /* yacc.c:1646  */
+  case 46:
+#line 316 "parser.ypp" /* yacc.c:1646  */
     {(yyval) = new TypeNode(E_BYTE);}
-#line 1515 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1735 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
-  case 20:
-#line 228 "parser.ypp" /* yacc.c:1646  */
+  case 47:
+#line 317 "parser.ypp" /* yacc.c:1646  */
     {(yyval) = new TypeNode(E_BOOLEAN);}
-#line 1521 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1741 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
-  case 21:
-#line 230 "parser.ypp" /* yacc.c:1646  */
+  case 48:
+#line 319 "parser.ypp" /* yacc.c:1646  */
     { (yyval) = (yyvsp[-1]); }
-#line 1527 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1747 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
-  case 22:
-#line 233 "parser.ypp" /* yacc.c:1646  */
+  case 49:
+#line 322 "parser.ypp" /* yacc.c:1646  */
     { 
 			cout << "Binop exp started " << endl;
 			
@@ -1549,33 +1769,26 @@ yyreduce:
 			cout << "Binop exp finished" << endl;
 
 		}
-#line 1553 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1773 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
-  case 23:
-#line 256 "parser.ypp" /* yacc.c:1646  */
+  case 50:
+#line 345 "parser.ypp" /* yacc.c:1646  */
     {
 			cout << "ID exp started" << endl;
-			if(isExist(((IdNode*)(yyvsp[0]))->id) == false){
-						errorUndef(yylineno,((IdNode*)(yyvsp[0]))->id.c_str());
+			if(isExist(((IdNode*)(yyvsp[0]))->id) == false || get_exists_element(((IdNode*)(yyvsp[0]))->id).type == E_FUNC){
+						errorUndef(yylineno,((IdNode*)(yyvsp[0]))->id);
 						exit(1);
 			}
-			// check if identefier type is legal
-			elementData eData = get_exists_element(((IdNode*)(yyvsp[0]))->id);
-			if(eData.isFunc)
-			{
-				errorUndef(yylineno,((IdNode*)(yyvsp[0]))->id.c_str());
-				exit(1);
-			}
 				
-			(yyval) = new IdExpNode((IdNode*)(yyvsp[0]),eData.type); 
+			(yyval) = new IdExpNode((IdNode*)(yyvsp[0]),get_exists_element(((IdNode*)(yyvsp[0]))->id).type); 
 			cout << "ID exp finished" << endl;
 		}
-#line 1575 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1788 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
-  case 24:
-#line 274 "parser.ypp" /* yacc.c:1646  */
+  case 51:
+#line 356 "parser.ypp" /* yacc.c:1646  */
     {
 			if(((CallNode*)(yyvsp[0]))->callType == E_VOID){
 				errorMismatch(yylineno);
@@ -1584,11 +1797,11 @@ yyreduce:
 			// Get funcDecl by Id and Check RetType of FuncDecl
 			((ExpNode*)(yyval))->expType = ((CallNode*)(yyvsp[0]))->callType;
 		}
-#line 1588 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1801 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
-  case 25:
-#line 283 "parser.ypp" /* yacc.c:1646  */
+  case 52:
+#line 365 "parser.ypp" /* yacc.c:1646  */
     { 
 			cout << "NUM exp started" << endl;
 			
@@ -1597,17 +1810,17 @@ yyreduce:
 			cout << "NUM exp finished" << endl;
 
 		}
-#line 1601 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1814 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
-  case 26:
-#line 293 "parser.ypp" /* yacc.c:1646  */
+  case 53:
+#line 375 "parser.ypp" /* yacc.c:1646  */
     {
 			cout << "NUM B exp started" << endl;
 
 			if(((NumNode*)(yyvsp[-1]))->num > 255){
 				string str = "" + ((NumNode*)(yyvsp[-1]))->num;
-				errorByteTooLarge(yylineno,str.c_str());
+				errorByteTooLarge(yylineno,str);
 				exit(1);
 			}
 			(yyval) = new NumBExpNode((NumNode*)(yyvsp[-1])); 
@@ -1615,33 +1828,33 @@ yyreduce:
 			cout << "NUM B exp finished" << endl;
 
 		}
-#line 1619 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1832 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
-  case 27:
-#line 308 "parser.ypp" /* yacc.c:1646  */
+  case 54:
+#line 390 "parser.ypp" /* yacc.c:1646  */
     {
 			cout << "String exp started" << endl;
 			(yyval) = new StringExpNode((StringNode*)(yyvsp[0])); 
 			cout << "String exp finished" << endl;
 		}
-#line 1629 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1842 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
-  case 28:
-#line 315 "parser.ypp" /* yacc.c:1646  */
+  case 55:
+#line 397 "parser.ypp" /* yacc.c:1646  */
     {(yyval) = new BoolExpNode((BoolNode*)(yyvsp[0]));}
-#line 1635 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1848 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
-  case 29:
-#line 316 "parser.ypp" /* yacc.c:1646  */
+  case 56:
+#line 398 "parser.ypp" /* yacc.c:1646  */
     {(yyval) = new BoolExpNode((BoolNode*)(yyvsp[0]));}
-#line 1641 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1854 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
-  case 30:
-#line 318 "parser.ypp" /* yacc.c:1646  */
+  case 57:
+#line 400 "parser.ypp" /* yacc.c:1646  */
     {
 			if((((ExpNode*)(yyvsp[0])))->expType != E_BOOLEAN){
 				errorMismatch(yylineno);
@@ -1649,11 +1862,11 @@ yyreduce:
 			 }
 			(yyval) = new NotExpNode(((ExpNode*)(yyvsp[0])));
 		}
-#line 1653 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1866 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
-  case 31:
-#line 326 "parser.ypp" /* yacc.c:1646  */
+  case 58:
+#line 408 "parser.ypp" /* yacc.c:1646  */
     {
 			if(((ExpNode*)(yyvsp[-2]))->expType != E_BOOLEAN || ((ExpNode*)(yyvsp[0]))->expType != E_BOOLEAN ){
 				errorMismatch(yylineno);
@@ -1661,11 +1874,11 @@ yyreduce:
 			 }
 			 (yyval) = new ExpNode(E_BOOLEAN);
 		}
-#line 1665 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1878 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
-  case 32:
-#line 334 "parser.ypp" /* yacc.c:1646  */
+  case 59:
+#line 416 "parser.ypp" /* yacc.c:1646  */
     {
 			if(((ExpNode*)(yyvsp[-2]))->expType != E_BOOLEAN || ((ExpNode*)(yyvsp[0]))->expType != E_BOOLEAN ){
 				errorMismatch(yylineno);
@@ -1673,11 +1886,11 @@ yyreduce:
 			 }
 			 (yyval) = new ExpNode(E_BOOLEAN);
 		}
-#line 1677 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1890 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
-  case 33:
-#line 342 "parser.ypp" /* yacc.c:1646  */
+  case 60:
+#line 424 "parser.ypp" /* yacc.c:1646  */
     {
 			if(((ExpNode*)(yyvsp[-2]))->expType != E_INTEGER || ((ExpNode*)(yyvsp[0]))->expType != E_INTEGER ){
 				errorMismatch(yylineno);
@@ -1685,11 +1898,11 @@ yyreduce:
 			 }
 			 (yyval) = new ExpNode(E_BOOLEAN);
 		}
-#line 1689 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1902 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
 
-#line 1693 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1906 "parser.tab.cpp" /* yacc.c:1646  */
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires
@@ -1917,7 +2130,7 @@ yyreturn:
 #endif
   return yyresult;
 }
-#line 349 "parser.ypp" /* yacc.c:1906  */
+#line 431 "parser.ypp" /* yacc.c:1906  */
 
 
 int main()
@@ -1934,10 +2147,10 @@ int yyerror(string message)
 	exit(1);
 }
 
-bool isLegalCoersion(EType fromType , EType toType)
+bool isLegalAssignment(EType fromType , EType toType)
 {
 	if((fromType == E_UNDEFINED) || (toType == E_UNDEFINED) ) {
-		std::cout << "error in isLegalCoersion " << std::endl;
+		std::cout << "error in isLegalAssignment " << std::endl;
 		exit(1);
 	}
 	if(fromType == toType) return true;
@@ -1945,11 +2158,11 @@ bool isLegalCoersion(EType fromType , EType toType)
 	return false;
 }
 
-std::vector<string> ListToVector(const list<EType>  list )
+std::vector<string>* ListToVector(const list<EType>  list )
 {
-	std::vector<string> vec ;
+	std::vector<string>* vec = new vector<string>();
 	for(std::list<EType>::const_iterator it= list.begin(); it!= list.end();++it){
-		string var_type  ;
+		string var_type;
 		switch(*it){
 			case E_INTEGER : var_type = "INT";
 							break;
@@ -1963,12 +2176,12 @@ std::vector<string> ListToVector(const list<EType>  list )
 					std::cout << "error in ListToVector undefined variable"<<std::endl;
 					exit(1);
 		}
-		vec.push_back(var_type);
+		vec->push_back(var_type);
 	}
 	return vec;
 }
 
-bool isExist(string elementName)
+bool isExist(string elementId)
 {
 	list<list<elementData> >::const_iterator end = vartable.end();
 	for(list<list<elementData> >::const_iterator element = vartable.begin()  ; element!=end ;  element++ )
@@ -1976,13 +2189,13 @@ bool isExist(string elementName)
 		list<elementData>::const_iterator lend = (*element).end();
 		for(list<elementData>::const_iterator lentry = (*element).begin()  ; lentry != lend ; lentry++)
 		{
-			if((*lentry).name == elementName ) 
+			if((*lentry).id == elementId ) 
 				return true ;
 		}
 	}
 	return false ; 
 }
-elementData get_exists_element(string elementName){
+elementData get_exists_element(string elementId){
 	
 	list<list<elementData> >::const_iterator end = vartable.end();
 	for(list<list<elementData> >::const_iterator element = vartable.begin()  ; element!=end ;  element++ )
@@ -1990,7 +2203,7 @@ elementData get_exists_element(string elementName){
 		 list<elementData>::const_iterator lend = (*element).end();
 		for(list<elementData>::const_iterator elementData = (*element).begin()  ; elementData != lend ; elementData++)
 		{
-			if((*elementData).name == elementName ) 
+			if((*elementData).id == elementId ) 
 				return (*elementData) ;
 		}
 	}
@@ -2002,9 +2215,48 @@ bool checkFuncArgs(list<EType> decleration,list<ExpNode*>* callparams){
 	list<ExpNode*>::const_iterator element2 = callparams->begin();
 	for(list<EType>::const_iterator element = decleration.begin()  ; element!=decleration.end() ;  ++element ,++element2)
 	{	
-		if(!isLegalCoersion((*element2)->expType,*element)) return false;
+		if(!isLegalAssignment((*element2)->expType,*element)) return false;
 	}
 	return true;
+}
+void CreateScope(){
+
+	vartable.push_front(list<elementData>());
+	offsets.push(offsets.size()==0 ? 0 :offsets.top());
+}
+void DestroyScope(){
+	endScope();
+	list<elementData> current_scope = vartable.front();
+
+	vartable.pop_front();
+	offsets.pop(); 
+
+    list<elementData>::reverse_iterator lend = current_scope.rend();
+	for(list<elementData>::reverse_iterator lentry = current_scope.rbegin()  ; lentry != lend ; lentry++){
+	
+	elementData var = *lentry;
+		string retType;
+		
+		if(var.type == E_FUNC){
+			
+			switch(var.retType){
+				case E_INTEGER :		retType = "INT";   break;
+				case E_BOOLEAN :		retType = "BOOL";  break;
+				case E_BYTE    : 		retType = "BYTE";  break;
+				case E_VOID    :		retType = "VOID";  break;
+				default : 				std::cout << "error in DestroyScope1 undefined variable"<<std::endl; exit(1); break;
+			}
+		}
+		string var_type;
+		switch(var.type){
+			case E_INTEGER :			var_type = "INT";  break;
+			case E_BOOLEAN :			var_type = "BOOL"; break;
+			case E_BYTE    : 			var_type = "BYTE"; break;
+			case E_FUNC    :			var_type = makeFunctionType(retType.c_str(),*(ListToVector(var.params))); break;
+			default : 					std::cout << "error in DestroyScope2 undefined variable"<<std::endl; exit(1);
+		}
+		printID(var.id.c_str(),var.offset,var_type.c_str());
+	}
 }
 
 //bool checkExpBinOpTypes(ExpNode e1, ExpNode e2)

@@ -7,33 +7,41 @@
 	#include <stdbool.h>
 	#include <stack> 
 	#include <iostream>
+	
+	//Namespaces
 	using namespace std;
 	using namespace output;
 
-	int yyerror(string message);
-	extern int yylineno;
-	extern int yylex();
-
-	typedef struct  {
-		string name;
+	typedef struct {
+		string id;
 		EType type;
 		int offset;
 		list<EType> params;  // only used for functions
 		EType retType; 		// only used for functions
-		bool isFunc;
 	}elementData;
 	
-	list<list<elementData> > vartable;
-	stack<int> offsets;
-
-	bool isLegalCoersion(EType type1,EType type2);
+	//Functions Declerations
+	int yyerror(string message);
+	extern int yylineno;
+	extern int yylex();
+	void CreateScope();
+	void DestroyScope();
+	bool isLegalAssignment(EType type1,EType type2);
 	bool checkFuncArgs(list<EType> decleration,list<ExpNode*>* callparams);
-	std::vector<string> ListToVector(const list<EType> list);
-	bool expListExist = false;
-	int mainFuncsCounter = 0;
+	std::vector<string>* ListToVector(const list<EType> list);
 	bool isExist(string elementName);
 	elementData get_exists_element(string elementName);
+	
+	//Variables Defenitions
+	list<list<elementData> > vartable;
+	stack<int> offsets;
+	static bool expListExist = false;
+	static bool statementStarted = false;
+	static bool insideSwitch = false;
+	static bool insideWhile = false;
+	static int mainFuncsCounter = 0;
 
+	
 %}
 
 %left AND
@@ -106,9 +114,9 @@ Funcs
 		((FuncsListNode*)$$)->funcsList->push_back(*currFunc);
 	} 
 
-FuncDecl : RetType ID LPAREN Formals RPAREN LBRACE Statments RBRACE
+FuncDecl : RetType ID LPAREN Formals RPAREN LBRACE Statements RBRACE
 		{
-			// Check if return Statments return the appropirate type
+			// Check if return Statements return the appropirate type
 			// Check Formals IDs conflict
 		}
 		
@@ -132,87 +140,168 @@ FormalsList : FormalDecl {  }
 			
 FormalDecl : Type ID { $$ = new FormalDeclNode((TypeNode*)$1,(IdNode*)$2);}
 
-Statments : ID {  }
+Statements : Statements Statement 
+		| Statement
 
-	
-Call : ID LPAREN ExpList RPAREN	//First_Finish
-	{
-		
-		//$$ = new CallNode((IdNode*)$1); Search in vtable and send type to constructor
-		//if(ID exist)
-		{
-			//elementData entry=get_exists_variable(vartable,$1.name);
-			
-		//if(entry->type != E_FUNC)
+Statement : LBRACE 
 			{
-				errorUndefFunc(yylineno,((IdNode*)$1)->id.c_str());
-				exit(1);
+	
 			}
-		//	if(checkFuncArgs(entry.params,$3.params) == false )
-		{
-				//errorPrototypeMismatch(yylineno,$1->id.c_str(),ListToVector(entry.params));
-				exit(1);
+		| Type ID SC 
+			{ 	
+
 			}
-			//$$->type = entry.retType;
-		}
-		//else
-		{
-			((CallNode*)$$)->callType = E_VOID;
-			if(((IdNode*)$1)->id == "print"){
-				//print function
-					list<EType> l = list<EType>();
-					l.push_back(E_STRING);
-				if(!checkFuncArgs(l,((ExpListNode*)$3)->params))
-				{
-					vector<string> v = vector<string>();
-					v.push_back("STRING");
-					errorPrototypeMismatch(yylineno,((IdNode*)$1)->id.c_str(),v);
+		| Type ID ASSIGN Exp SC 
+			{ 
+
+			}
+		| ID ASSIGN Exp SC
+			{
+				if(isExist(((IdNode*)$1)->id) == false || get_exists_element(((IdNode*)$1)->id).type == E_FUNC){
+					errorUndef(yylineno,((IdNode*)$1)->id);
+					exit(1);	
+				}
+				if(isLegalAssignment(((ExpNode*)$3)->expType,get_exists_element(((IdNode*)$1)->id).type) == false){
+					errorMismatch(yylineno);
 					exit(1);
 				}
-			}else if(((IdNode*)$1)->id == "printi")  {
-				//printi function
-				list<EType> l = list<EType>();
-				l.push_back(E_INTEGER);
-				if(!checkFuncArgs(l,((ExpListNode*)$3)->params)){
-					
-					vector<string> v = vector<string>();
-					v.push_back("INT");
-					
-					errorPrototypeMismatch(yylineno,((IdNode*)$1)->id.c_str(),v);
+			
+			}
+		| Call SC 
+		| RETURN SC 
+			{
+				//TODO : need to check if last functionDecl returns void
+				/*
+					errorMismatch(yylineno);
+					exit(1);
+				*/
+			}
+		| RETURN Exp SC
+			{
+				//TODO : need to check if last functionDecl returns a type same as expType
+				/*
+					errorMismatch(yylineno);
+					exit(1);
+				*/
+			}
+		| IF LPAREN Exp 
+			{ 
+				statementStarted = true;
+				if(((ExpNode*)$3)->expType != E_BOOLEAN)
+				{
+					errorMismatch(yylineno);
+					exit(1);
+				}
+
+			} IfContinue
+		| WHILE LPAREN Exp 
+			{
+				statementStarted = true;
+				insideWhile = true;
+				if(((ExpNode*)$3)->expType != E_BOOLEAN)
+				{
+					errorMismatch(yylineno);
 					exit(1);
 				}
 				
-			}else{
-				errorUndefFunc(yylineno,((IdNode*)$1)->id.c_str());
+			} 
+			RPAREN Statement 
+			{
+				statementStarted = false;
+				insideWhile = false;
+			}
+		| BREAK SC 
+			{
+				if(insideSwitch == false && insideWhile == false)
+				{
+					errorUnexpectedBreak(yylineno);
+					exit(1);
+				}
+			}
+		| SWITCH LPAREN Exp 
+			{
+				EType expType = ((ExpNode*)$3)->expType;
+				if(expType != E_INTEGER && expType != E_BYTE)
+				{
+					errorMismatch(yylineno);
+					exit(1);
+				}
+			}
+			RPAREN LBRACE {CreateScope(); insideSwitch = true;} CaseList RBRACE {DestroyScope();insideSwitch = false;} SC
+
+IfContinue: RPAREN Statement {statementStarted = false;}
+		|	RPAREN Statement ELSE {statementStarted = true;} Statement {statementStarted = false;}
+
+CaseList : CaseDec CaseList
+		| CaseDec
+
+CaseDec : CASE NUM COLON {statementStarted = true;} Statement BREAK SC {statementStarted = false;}
+		| CASE NUM B COLON {statementStarted = true;} Statement BREAK SC {statementStarted = false;}
+	
+Call : ID LPAREN CheckFunc ExpList RPAREN
+		{
+			string idVal = ((IdNode*)$1)->id;
+			elementData data = get_exists_element(idVal);
+			if(idVal == "print" || idVal == "printi")
+			{
+					list<EType> decleration = list<EType>();
+					idVal == "print" ? decleration.push_back(E_STRING) : decleration.push_back(E_INTEGER);
+	
+					if(checkFuncArgs(decleration,((ExpListNode*)$1)->params) == false)
+					{
+						vector<string> v = vector<string>();
+						idVal == "print" ? v.push_back("STRING") : v.push_back("INT");;
+						errorPrototypeMismatch(yylineno,idVal,v);
+						exit(1);
+					}
+				$$ = new CallNode((IdNode*)$1,E_VOID);
+			}
+			else{
+				if(checkFuncArgs(data.params,((ExpListNode*)$1)->params) == false )
+				{
+						errorPrototypeMismatch(yylineno,idVal,*(ListToVector(data.params)));
+						exit(1);
+						
+				}
+				$$ = new CallNode((IdNode*)$1,data.retType);
+			}
+	
+	
+		}
+	| ID LPAREN CheckFunc RPAREN
+		{
+			string idVal = ((IdNode*)$1)->id;
+			elementData data = get_exists_element(idVal);
+	
+			if(data.params.size() != 0)
+			{
+				errorPrototypeMismatch(yylineno,idVal,*(ListToVector(data.params)));
+				exit(1);
+			}
+			$$ = new CallNode((IdNode*)$1,data.retType);
+		}
+	
+CheckFunc : 
+	{
+		
+		string idVal = ((IdNode*)$0)->id;
+		if(idVal != "print" && idVal != "printi"){
+			if(isExist(idVal) == false)
+			{
+				errorUndefFunc(yylineno,idVal);
+				exit(1);
+			}
+			elementData data = get_exists_element(idVal);
+			if(data.type != E_FUNC)
+			{
+				errorUndefFunc(yylineno,idVal);
 				exit(1);
 			}
 		}
-	
-		
-	};
-	| ID LPAREN RPAREN //First_Finish
-		{
-		//if(isExist(vartable,$1.name) != 1 )
-		{
-			errorUndefFunc(yylineno,((IdNode*)$1)->id.c_str());
-			exit(1);
-		}
-		//elementData entry=get_exists_variable(vartable,$1.name.c_str());
-		//if(entry.type != E_FUNC)
-		{
-			errorUndefFunc(yylineno,((IdNode*)$1)->id.c_str());
-			exit(1);
-		}
-		//if(entry.params.size() != 0)
-		{
-			//errorPrototypeMismatch(yylineno,((IdNode*)$1)->id.c_str(),ListToVector(entry.params));
-			exit(1);
-		}
-		//$$.type = entry.retType;
-		
-		}
 
-ExpList: Exp COMMA ExpList  //First_Finish
+	}
+
+ExpList: Exp COMMA ExpList  
 		{
 			$$ = $2;
 			(((ExpListNode*)$$)->params)->push_front((ExpNode*)$1);
@@ -223,13 +312,13 @@ ExpList: Exp COMMA ExpList  //First_Finish
 			(((ExpListNode*)$$)->params)->push_front((ExpNode*)$1);
 		};
 		
-Type 	: 	INT 	{$$ = new TypeNode(E_INTEGER);} //First_Finish
+Type 	: 	INT 	{$$ = new TypeNode(E_INTEGER);} 
 		|	BYTE  	{$$ = new TypeNode(E_BYTE);}
 		|	BOOL 	{$$ = new TypeNode(E_BOOLEAN);};
 		
 Exp : LPAREN Exp RPAREN { $$ = $2; }
 		
-	| Exp BINOP Exp //First_Finish
+	| Exp BINOP Exp 
 		{ 
 			cout << "Binop exp started " << endl;
 			
@@ -252,25 +341,18 @@ Exp : LPAREN Exp RPAREN { $$ = $2; }
 
 		}
 		
-	| ID //First_Finish
+	| ID 
 		{
 			cout << "ID exp started" << endl;
-			if(isExist(((IdNode*)$1)->id) == false){
-						errorUndef(yylineno,((IdNode*)$1)->id.c_str());
+			if(isExist(((IdNode*)$1)->id) == false || get_exists_element(((IdNode*)$1)->id).type == E_FUNC){
+						errorUndef(yylineno,((IdNode*)$1)->id);
 						exit(1);
 			}
-			// check if identefier type is legal
-			elementData eData = get_exists_element(((IdNode*)$1)->id);
-			if(eData.isFunc)
-			{
-				errorUndef(yylineno,((IdNode*)$1)->id.c_str());
-				exit(1);
-			}
 				
-			$$ = new IdExpNode((IdNode*)$1,eData.type); 
+			$$ = new IdExpNode((IdNode*)$1,get_exists_element(((IdNode*)$1)->id).type); 
 			cout << "ID exp finished" << endl;
 		}
-	| Call //First_Finish , not sure
+	| Call  
 		{
 			if(((CallNode*)$1)->callType == E_VOID){
 				errorMismatch(yylineno);
@@ -279,7 +361,7 @@ Exp : LPAREN Exp RPAREN { $$ = $2; }
 			// Get funcDecl by Id and Check RetType of FuncDecl
 			((ExpNode*)$$)->expType = ((CallNode*)$1)->callType;
 		}
-	| NUM //First_Finish
+	| NUM 
 		{ 
 			cout << "NUM exp started" << endl;
 			
@@ -289,13 +371,13 @@ Exp : LPAREN Exp RPAREN { $$ = $2; }
 
 		}
 		
-	| NUM B //First_Finish
+	| NUM B 
 		{
 			cout << "NUM B exp started" << endl;
 
 			if(((NumNode*)$1)->num > 255){
 				string str = "" + ((NumNode*)$1)->num;
-				errorByteTooLarge(yylineno,str.c_str());
+				errorByteTooLarge(yylineno,str);
 				exit(1);
 			}
 			$$ = new NumBExpNode((NumNode*)$1); 
@@ -304,7 +386,7 @@ Exp : LPAREN Exp RPAREN { $$ = $2; }
 
 		}
 
-	| STRING //First_Finish
+	| STRING 
 		{
 			cout << "String exp started" << endl;
 			$$ = new StringExpNode((StringNode*)$1); 
@@ -312,9 +394,9 @@ Exp : LPAREN Exp RPAREN { $$ = $2; }
 		}
 		
 		
-	| TRUE		{$$ = new BoolExpNode((BoolNode*)$1);}//First_Finish	
-	| FALSE		{$$ = new BoolExpNode((BoolNode*)$1);}//First_Finish
-	| NOT Exp	//First_Finish
+	| TRUE		{$$ = new BoolExpNode((BoolNode*)$1);}	
+	| FALSE		{$$ = new BoolExpNode((BoolNode*)$1);}
+	| NOT Exp	
 		{
 			if((((ExpNode*)$2))->expType != E_BOOLEAN){
 				errorMismatch(yylineno);
@@ -322,7 +404,7 @@ Exp : LPAREN Exp RPAREN { $$ = $2; }
 			 }
 			$$ = new NotExpNode(((ExpNode*)$2));
 		}
-	| Exp OR Exp  //First_Finish
+	| Exp OR Exp  
 		{
 			if(((ExpNode*)$1)->expType != E_BOOLEAN || ((ExpNode*)$3)->expType != E_BOOLEAN ){
 				errorMismatch(yylineno);
@@ -330,7 +412,7 @@ Exp : LPAREN Exp RPAREN { $$ = $2; }
 			 }
 			 $$ = new ExpNode(E_BOOLEAN);
 		}
-	| Exp AND Exp //First_Finish
+	| Exp AND Exp 
 		{
 			if(((ExpNode*)$1)->expType != E_BOOLEAN || ((ExpNode*)$3)->expType != E_BOOLEAN ){
 				errorMismatch(yylineno);
@@ -338,7 +420,7 @@ Exp : LPAREN Exp RPAREN { $$ = $2; }
 			 }
 			 $$ = new ExpNode(E_BOOLEAN);
 		}
-	| Exp RELOP Exp	//First_Finish
+	| Exp RELOP Exp	
 		{
 			if(((ExpNode*)$1)->expType != E_INTEGER || ((ExpNode*)$3)->expType != E_INTEGER ){
 				errorMismatch(yylineno);
@@ -362,10 +444,10 @@ int yyerror(string message)
 	exit(1);
 }
 
-bool isLegalCoersion(EType fromType , EType toType)
+bool isLegalAssignment(EType fromType , EType toType)
 {
 	if((fromType == E_UNDEFINED) || (toType == E_UNDEFINED) ) {
-		std::cout << "error in isLegalCoersion " << std::endl;
+		std::cout << "error in isLegalAssignment " << std::endl;
 		exit(1);
 	}
 	if(fromType == toType) return true;
@@ -373,11 +455,11 @@ bool isLegalCoersion(EType fromType , EType toType)
 	return false;
 }
 
-std::vector<string> ListToVector(const list<EType>  list )
+std::vector<string>* ListToVector(const list<EType>  list )
 {
-	std::vector<string> vec ;
+	std::vector<string>* vec = new vector<string>();
 	for(std::list<EType>::const_iterator it= list.begin(); it!= list.end();++it){
-		string var_type  ;
+		string var_type;
 		switch(*it){
 			case E_INTEGER : var_type = "INT";
 							break;
@@ -391,12 +473,12 @@ std::vector<string> ListToVector(const list<EType>  list )
 					std::cout << "error in ListToVector undefined variable"<<std::endl;
 					exit(1);
 		}
-		vec.push_back(var_type);
+		vec->push_back(var_type);
 	}
 	return vec;
 }
 
-bool isExist(string elementName)
+bool isExist(string elementId)
 {
 	list<list<elementData> >::const_iterator end = vartable.end();
 	for(list<list<elementData> >::const_iterator element = vartable.begin()  ; element!=end ;  element++ )
@@ -404,13 +486,13 @@ bool isExist(string elementName)
 		list<elementData>::const_iterator lend = (*element).end();
 		for(list<elementData>::const_iterator lentry = (*element).begin()  ; lentry != lend ; lentry++)
 		{
-			if((*lentry).name == elementName ) 
+			if((*lentry).id == elementId ) 
 				return true ;
 		}
 	}
 	return false ; 
 }
-elementData get_exists_element(string elementName){
+elementData get_exists_element(string elementId){
 	
 	list<list<elementData> >::const_iterator end = vartable.end();
 	for(list<list<elementData> >::const_iterator element = vartable.begin()  ; element!=end ;  element++ )
@@ -418,7 +500,7 @@ elementData get_exists_element(string elementName){
 		 list<elementData>::const_iterator lend = (*element).end();
 		for(list<elementData>::const_iterator elementData = (*element).begin()  ; elementData != lend ; elementData++)
 		{
-			if((*elementData).name == elementName ) 
+			if((*elementData).id == elementId ) 
 				return (*elementData) ;
 		}
 	}
@@ -430,9 +512,48 @@ bool checkFuncArgs(list<EType> decleration,list<ExpNode*>* callparams){
 	list<ExpNode*>::const_iterator element2 = callparams->begin();
 	for(list<EType>::const_iterator element = decleration.begin()  ; element!=decleration.end() ;  ++element ,++element2)
 	{	
-		if(!isLegalCoersion((*element2)->expType,*element)) return false;
+		if(!isLegalAssignment((*element2)->expType,*element)) return false;
 	}
 	return true;
+}
+void CreateScope(){
+
+	vartable.push_front(list<elementData>());
+	offsets.push(offsets.size()==0 ? 0 :offsets.top());
+}
+void DestroyScope(){
+	endScope();
+	list<elementData> current_scope = vartable.front();
+
+	vartable.pop_front();
+	offsets.pop(); 
+
+    list<elementData>::reverse_iterator lend = current_scope.rend();
+	for(list<elementData>::reverse_iterator lentry = current_scope.rbegin()  ; lentry != lend ; lentry++){
+	
+	elementData var = *lentry;
+		string retType;
+		
+		if(var.type == E_FUNC){
+			
+			switch(var.retType){
+				case E_INTEGER :		retType = "INT";   break;
+				case E_BOOLEAN :		retType = "BOOL";  break;
+				case E_BYTE    : 		retType = "BYTE";  break;
+				case E_VOID    :		retType = "VOID";  break;
+				default : 				std::cout << "error in DestroyScope1 undefined variable"<<std::endl; exit(1); break;
+			}
+		}
+		string var_type;
+		switch(var.type){
+			case E_INTEGER :			var_type = "INT";  break;
+			case E_BOOLEAN :			var_type = "BOOL"; break;
+			case E_BYTE    : 			var_type = "BYTE"; break;
+			case E_FUNC    :			var_type = makeFunctionType(retType.c_str(),*(ListToVector(var.params))); break;
+			default : 					std::cout << "error in DestroyScope2 undefined variable"<<std::endl; exit(1);
+		}
+		printID(var.id.c_str(),var.offset,var_type.c_str());
+	}
 }
 
 //bool checkExpBinOpTypes(ExpNode e1, ExpNode e2)
