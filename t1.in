@@ -1,13 +1,4 @@
-void printOk(bool isOk) {
-    if (isOk) print("ok");
-}
-//asdsfadsfadsf
-//asdf dsafdsa gfa
-//fads ads ga dga
-void main()
+void main(int x)
 {
     int x = 4;
-    byte y = 100 b;
-    printOk(x>y);
-    int z;
 }

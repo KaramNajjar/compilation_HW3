@@ -20,21 +20,12 @@ struct Node
 	
 };
 
-
-struct RetTypeNode : Node
+struct TypeNode : Node
 {
-	EType retType;
-	RetTypeNode(EType retType)
+	EType type;
+	TypeNode(EType type)
 	{
-		this->retType = retType;
-	}
-};
-
-struct TypeNode : RetTypeNode
-{
-	TypeNode(EType etype) : RetTypeNode(etype)
-	{
-
+		this->type = type;
 	}
 };
 
@@ -377,12 +368,12 @@ struct FormalsNode : Node
 
 struct FuncNode : Node
 {
-	RetTypeNode* retType;
+	TypeNode* retType;
 	IdNode* id;
 	FormalsNode* formalsNode;
 	StatementNodes* statements;
 	
-	FuncNode(RetTypeNode* retType, IdNode* id)
+	FuncNode(TypeNode* retType, IdNode* id)
 	{
 		this->retType = retType;
 		this->id = id;
@@ -390,7 +381,7 @@ struct FuncNode : Node
 		this->statements = new StatementNodes();
 	}
 	
-	FuncNode(RetTypeNode* retType, IdNode* id, FormalsNode* formalsNode, StatementNodes* statements)
+	FuncNode(TypeNode* retType, IdNode* id, FormalsNode* formalsNode, StatementNodes* statements)
 	{
 		this->id = id;
 		this->retType = retType;
@@ -401,11 +392,11 @@ struct FuncNode : Node
 
 struct FuncsListNode : Node
 {
-	list<FuncNode>* funcsList;
+	list<FuncNode*>* funcsList;
 	
 	FuncsListNode()
 	{
-		funcsList = new list<FuncNode>();
+		funcsList = new list<FuncNode*>();
 	}
 };
 

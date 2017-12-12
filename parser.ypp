@@ -16,7 +16,7 @@
 		string id;
 		EType type;
 		int offset;
-		list<EType> params;  // only used for functions
+		list<FormalDeclNode*>* params;  // only used for functions
 		EType retType; 		// only used for functions
 	}elementData;
 	
@@ -27,8 +27,9 @@
 	void AddScope();
 	void RemoveScope();
 	bool isLegalAssignment(EType type1,EType type2);
-	bool checkFuncArgs(list<EType> decleration,list<ExpNode*>* callparams);
-	std::vector<string>* ListToVector(const list<EType> list);
+	bool checkFuncArgs(list<FormalDeclNode*>* decleration,list<ExpNode*>* callparams);
+	bool checkFuncArgs2(list<EType> decleration,list<ExpNode*>* callparams);
+	std::vector<string>* ListToVector(const list<FormalDeclNode*>* list);
 	bool isExist(string elementName);
 	elementData get_exists_element(string elementName);
 	int insertElement(elementData& element);
@@ -42,6 +43,7 @@
 	static bool insideWhile = false;
 	static int mainFuncsCounter = 0;
 	static int nextParamOffset =0;
+	static EType currentRetType = E_UNDEFINED;
 
 	
 %}
@@ -89,46 +91,82 @@
 
 
 
-Prog : Exp Funcs 
+Prog : Funcs 
 	{
-		//IDK what to write here...
-		if(mainFuncsCounter < 1)
+		if(mainFuncsCounter != 1)
+		{
 			errorMainMissing();
+			exit(1);
+		}
 	}
 	
 Funcs 
-	: {/*$$ = new FuncsListNode();*/}
+	: { $$ = new FuncsListNode(); }
 	| FuncDecl Funcs 
 	{
-		FuncNode* currFunc = (FuncNode*)$1;
-		FormalsListNode* currFormalsList = currFunc->formalsNode->formalsListNode;
-		if(((IdNode*)currFunc->id)->id == "main" && currFunc->retType->retType == E_VOID && currFormalsList->formalDecls->empty())
-		{
-			mainFuncsCounter++;
-			if(mainFuncsCounter > 1)
-				errorMainMissing();// Delete this and Threw an appropirate error...
-		}
-		
-		if($2 == NULL)
-			$2 = new FuncsListNode();
-		
-		$$ = (FuncsListNode*)$2;
-		((FuncsListNode*)$$)->funcsList->push_back(*currFunc);
+		$$ = ((FuncsListNode*)$2);
+		((FuncsListNode*)$$)->funcsList->push_front((FuncNode*)$1);
 	} 
 
-FuncDecl : RetType ID LPAREN { AddScope(); } Formals RPAREN LBRACE Statements RBRACE
+FuncDecl : RetType ID
 		{
+			string idVal = ((IdNode*)$2)->id;
+
+			if(isExist(idVal))
+			{
+				errorDef(yylineno,idVal);
+				exit(1);
+			}
+			elementData data = 
+			{
+				idVal,
+				E_FUNC,
+				0,
+				new list<FormalDeclNode*>(),
+				E_UNDEFINED
+			};
+			if(insertElement(data) != 0){
+				errorDef(yylineno,idVal);
+				exit(1);
+			}
+			currentRetType = ((TypeNode*)$1)->type;
+			nextParamOffset = 0;
+		} 
+		LPAREN { AddScope(); } Formals RPAREN 
+		{
+			string idVal = ((IdNode*)$2)->id;
+			elementData data = 
+			{
+				idVal,
+				E_FUNC,
+				0,
+				((FormalsNode*)$5)->formalsListNode->formalDecls,
+				((TypeNode*)$1)->type
+			};
+			
+			if( idVal == "main" && ((TypeNode*)$1)->type == E_VOID && ((FormalsNode*)$5)->formalsListNode->formalDecls->empty())
+			{
+				mainFuncsCounter++;
+			}
+			
+			// TODO: if(updateFuncParams(data) == false)
+			// {
+				// std::cout << "error in FuncDel " << std::endl;
+				// exit(1);
+			// }
+		} LBRACE Statements RBRACE 
+		{
+			$$ = new FuncNode((TypeNode*)$1, (IdNode*)$2, (FormalsNode*)$5, (StatementNodes*)$8);
+			currentRetType = E_UNDEFINED;
 			RemoveScope();
-			// Check if return Statements return the appropirate type
-			// Check Formals IDs conflict
 		}
 		
-RetType : Type {$$ = (RetTypeNode*)$1;}
+RetType : Type {$$ = (TypeNode*)$1;}
 		| VOID {$$ = new TypeNode(E_VOID);}
 		
 Formals : FormalsList {$$ = new FormalsNode((FormalsListNode*)$1);}
-		| {}
-		
+		| {$$ = new FormalsNode(new FormalsListNode());}
+	// mostly the warning exists here (*formal*)	
 FormalsList : {nextParamOffset--;} FormalDecl FormalsTail
 			{ 	
 				elementData data = 
@@ -136,7 +174,7 @@ FormalsList : {nextParamOffset--;} FormalDecl FormalsTail
 					((FormalDeclNode*)$2)->id,
 					((FormalDeclNode*)$2)->type,
 					nextParamOffset,
-					list<EType>(),
+					new list<FormalDeclNode*>(),
 					E_UNDEFINED
 				};  
 				if((insertElement(data) != 0)){
@@ -155,7 +193,7 @@ FormalsTail : COMMA FormalsList { $$ = ((FormalsListNode*)$2); }
 						
 FormalDecl : Type ID 
 			{ 
-				$$ = new FormalDeclNode(((TypeNode*)$1)->retType,((IdNode*)$2)->id);
+				$$ = new FormalDeclNode(((TypeNode*)$1)->type,((IdNode*)$2)->id);
 			}
 
 Statements : Statements Statement 
@@ -168,9 +206,9 @@ Statement : LBRACE { AddScope(); } Statements RBRACE { RemoveScope(); }
 				elementData data = 
 				{
 					((IdNode*)$2)->id,
-					((TypeNode*)$1)->retType,
+					((TypeNode*)$1)->type,
 					offsets.top(),
-					list<EType>(),
+					new list<FormalDeclNode*>(),
 					E_UNDEFINED
 				};  
 				if((insertElement(data) != 0)){
@@ -184,16 +222,16 @@ Statement : LBRACE { AddScope(); } Statements RBRACE { RemoveScope(); }
 				elementData data = 
 				{
 					((IdNode*)$2)->id,
-					((TypeNode*)$1)->retType,
+					((TypeNode*)$1)->type,
 					offsets.top(),
-					list<EType>(),
+					new list<FormalDeclNode*>(),
 					E_UNDEFINED
 				};  
 				if((insertElement(data) != 0)){
 					errorDef(yylineno,((IdNode*)$2)->id);
 					exit(1);
 				}
-				if(isLegalAssignment(((ExpNode*)$4)->expType,((TypeNode*)$1)->retType) == false){
+				if(isLegalAssignment(((ExpNode*)$4)->expType,((TypeNode*)$1)->type) == false){
 					errorMismatch(yylineno);
 					exit(1);
 				}
@@ -213,19 +251,20 @@ Statement : LBRACE { AddScope(); } Statements RBRACE { RemoveScope(); }
 		| Call SC 
 		| RETURN SC 
 			{
-				//TODO : need to check if last functionDecl returns void
-				/*
+				if(currentRetType != E_VOID)
+				{
 					errorMismatch(yylineno);
 					exit(1);
-				*/
+				}
 			}
 		| RETURN Exp SC
 			{
-				//TODO : need to check if last functionDecl returns a type same as expType
-				/*
+				if(((ExpNode*)$3)->expType != currentRetType)
+				{
 					errorMismatch(yylineno);
 					exit(1);
-				*/
+				
+				}
 			}
 		| IF LPAREN Exp 
 			{ 
@@ -291,7 +330,7 @@ Call : ID LPAREN CheckFunc ExpList RPAREN
 					list<EType> decleration = list<EType>();
 					idVal == "print" ? decleration.push_back(E_STRING) : decleration.push_back(E_INTEGER);
 	
-					if(checkFuncArgs(decleration,((ExpListNode*)$1)->params) == false)
+					if(checkFuncArgs2(decleration,((ExpListNode*)$1)->params) == false)
 					{
 						vector<string> v = vector<string>();
 						idVal == "print" ? v.push_back("STRING") : v.push_back("INT");;
@@ -317,7 +356,7 @@ Call : ID LPAREN CheckFunc ExpList RPAREN
 			string idVal = ((IdNode*)$1)->id;
 			elementData data = get_exists_element(idVal);
 	
-			if(data.params.size() != 0)
+			if(data.params->size() != 0)
 			{
 				errorPrototypeMismatch(yylineno,idVal,*(ListToVector(data.params)));
 				exit(1);
@@ -502,12 +541,12 @@ bool isLegalAssignment(EType fromType , EType toType)
 	return false;
 }
 
-std::vector<string>* ListToVector(const list<EType>  list )
+std::vector<string>* ListToVector(const list<FormalDeclNode*>*  list )
 {
 	std::vector<string>* vec = new vector<string>();
-	for(std::list<EType>::const_iterator it= list.begin(); it!= list.end();++it){
+	for(std::list<FormalDeclNode*>::const_iterator it= list->begin(); it!= list->end();++it){
 		string var_type;
-		switch(*it){
+		switch((*it)->type){
 			case E_INTEGER : var_type = "INT";
 							break;
 			case E_BOOLEAN : var_type = "BOOL";
@@ -553,7 +592,18 @@ elementData get_exists_element(string elementId){
 	}
 }
 
-bool checkFuncArgs(list<EType> decleration,list<ExpNode*>* callparams){
+bool checkFuncArgs(list<FormalDeclNode*>* decleration,list<ExpNode*>* callparams){
+
+	if(decleration->size() != callparams->size()) return false;
+	list<ExpNode*>::const_iterator element2 = callparams->begin();
+	for(list<FormalDeclNode*>::const_iterator element = decleration->begin()  ; element!=decleration->end() ;  ++element ,++element2)
+	{	
+		if(!isLegalAssignment((*element2)->expType,(*element)->type)) return false;
+	}
+	return true;
+}
+
+bool checkFuncArgs2(list<EType> decleration,list<ExpNode*>* callparams){
 
 	if(decleration.size() != callparams->size()) return false;
 	list<ExpNode*>::const_iterator element2 = callparams->begin();
@@ -563,6 +613,7 @@ bool checkFuncArgs(list<EType> decleration,list<ExpNode*>* callparams){
 	}
 	return true;
 }
+
 void AddScope(){
 
 	vartable.push_front(list<elementData>());
