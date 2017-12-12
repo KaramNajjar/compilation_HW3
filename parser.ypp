@@ -24,13 +24,14 @@
 	int yyerror(string message);
 	extern int yylineno;
 	extern int yylex();
-	void CreateScope();
-	void DestroyScope();
+	void AddScope();
+	void RemoveScope();
 	bool isLegalAssignment(EType type1,EType type2);
 	bool checkFuncArgs(list<EType> decleration,list<ExpNode*>* callparams);
 	std::vector<string>* ListToVector(const list<EType> list);
 	bool isExist(string elementName);
 	elementData get_exists_element(string elementName);
+	int insertElement(elementData& element);
 	
 	//Variables Defenitions
 	list<list<elementData> > vartable;
@@ -40,6 +41,7 @@
 	static bool insideSwitch = false;
 	static bool insideWhile = false;
 	static int mainFuncsCounter = 0;
+	static int nextParamOffset =0;
 
 	
 %}
@@ -114,46 +116,87 @@ Funcs
 		((FuncsListNode*)$$)->funcsList->push_back(*currFunc);
 	} 
 
-FuncDecl : RetType ID LPAREN Formals RPAREN LBRACE Statements RBRACE
+FuncDecl : RetType ID LPAREN { AddScope(); } Formals RPAREN LBRACE Statements RBRACE
 		{
+			RemoveScope();
 			// Check if return Statements return the appropirate type
 			// Check Formals IDs conflict
 		}
 		
 RetType : Type {$$ = (RetTypeNode*)$1;}
-		| VOID {$$ = new VoidTypeNode();}
+		| VOID {$$ = new TypeNode(E_VOID);}
 		
 Formals : FormalsList {$$ = new FormalsNode((FormalsListNode*)$1);}
 		| {}
 		
-FormalsList : FormalDecl {  }
-			| FormalDecl COMMA FormalsList
-			{
-				FormalDeclNode* currFormalDecl = (FormalDeclNode*)$1;
-				
-				if($3 == NULL)
-					$3 = new FormalsListNode();
-		
-				$$ = (FormalsListNode*)$2;
-				((FormalsListNode*)$$)->formalDecls->push_back(*currFormalDecl);
+FormalsList : {nextParamOffset--;} FormalDecl FormalsTail
+			{ 	
+				elementData data = 
+				{
+					((FormalDeclNode*)$2)->id,
+					((FormalDeclNode*)$2)->type,
+					nextParamOffset,
+					list<EType>(),
+					E_UNDEFINED
+				};  
+				if((insertElement(data) != 0)){
+					errorDef(yylineno,((FormalDeclNode*)$2)->id);
+					exit(1);
+				}
+				offsets.top()--;
+				nextParamOffset++;
+								
+				$$ = ((FormalsListNode*)$3);
+				((FormalsListNode*)$$)->formalDecls->push_front((FormalDeclNode*)$2);
 			}
 			
-FormalDecl : Type ID { $$ = new FormalDeclNode((TypeNode*)$1,(IdNode*)$2);}
+FormalsTail : COMMA FormalsList { $$ = ((FormalsListNode*)$2); }
+			| { $$ = new FormalsListNode(); }
+						
+FormalDecl : Type ID 
+			{ 
+				$$ = new FormalDeclNode(((TypeNode*)$1)->retType,((IdNode*)$2)->id);
+			}
 
 Statements : Statements Statement 
 		| Statement
 
-Statement : LBRACE 
-			{
-	
-			}
+Statement : LBRACE { AddScope(); } Statements RBRACE { RemoveScope(); }
+
 		| Type ID SC 
 			{ 	
-
+				elementData data = 
+				{
+					((IdNode*)$2)->id,
+					((TypeNode*)$1)->retType,
+					offsets.top(),
+					list<EType>(),
+					E_UNDEFINED
+				};  
+				if((insertElement(data) != 0)){
+					errorDef(yylineno,((IdNode*)$2)->id);
+					exit(1);
+				}
 			}
+			
 		| Type ID ASSIGN Exp SC 
 			{ 
-
+				elementData data = 
+				{
+					((IdNode*)$2)->id,
+					((TypeNode*)$1)->retType,
+					offsets.top(),
+					list<EType>(),
+					E_UNDEFINED
+				};  
+				if((insertElement(data) != 0)){
+					errorDef(yylineno,((IdNode*)$2)->id);
+					exit(1);
+				}
+				if(isLegalAssignment(((ExpNode*)$4)->expType,((TypeNode*)$1)->retType) == false){
+					errorMismatch(yylineno);
+					exit(1);
+				}
 			}
 		| ID ASSIGN Exp SC
 			{
@@ -193,7 +236,7 @@ Statement : LBRACE
 					exit(1);
 				}
 
-			} IfContinue
+			} RPAREN { AddScope(); } Statement { RemoveScope(); } IfContinue
 		| WHILE LPAREN Exp 
 			{
 				statementStarted = true;
@@ -205,8 +248,9 @@ Statement : LBRACE
 				}
 				
 			} 
-			RPAREN Statement 
-			{
+			RPAREN  { AddScope(); } Statement 
+			{ 
+				RemoveScope(); 
 				statementStarted = false;
 				insideWhile = false;
 			}
@@ -227,16 +271,16 @@ Statement : LBRACE
 					exit(1);
 				}
 			}
-			RPAREN LBRACE {CreateScope(); insideSwitch = true;} CaseList RBRACE {DestroyScope();insideSwitch = false;} SC
+			RPAREN LBRACE {AddScope(); insideSwitch = true;} CaseList RBRACE {RemoveScope();insideSwitch = false;} SC
 
-IfContinue: RPAREN Statement {statementStarted = false;}
-		|	RPAREN Statement ELSE {statementStarted = true;} Statement {statementStarted = false;}
+IfContinue: {}
+		| ELSE { AddScope(); } Statement { RemoveScope(); }
 
 CaseList : CaseDec CaseList
 		| CaseDec
 
-CaseDec : CASE NUM COLON {statementStarted = true;} Statement BREAK SC {statementStarted = false;}
-		| CASE NUM B COLON {statementStarted = true;} Statement BREAK SC {statementStarted = false;}
+CaseDec : CASE NUM COLON Statement BREAK SC
+		| CASE NUM B COLON Statement BREAK SC 
 	
 Call : ID LPAREN CheckFunc ExpList RPAREN
 		{
@@ -284,7 +328,7 @@ Call : ID LPAREN CheckFunc ExpList RPAREN
 CheckFunc : 
 	{
 		
-		string idVal = ((IdNode*)$0)->id;
+		string idVal = ((IdNode*)$-1)->id;
 		if(idVal != "print" && idVal != "printi"){
 			if(isExist(idVal) == false)
 			{
@@ -450,8 +494,11 @@ bool isLegalAssignment(EType fromType , EType toType)
 		std::cout << "error in isLegalAssignment " << std::endl;
 		exit(1);
 	}
-	if(fromType == toType) return true;
-	if((fromType == E_BYTE) && (toType == E_INTEGER) ) return true;
+	if(fromType == toType)
+		return true;
+	if((fromType == E_BYTE) && (toType == E_INTEGER))
+		return true;
+	
 	return false;
 }
 
@@ -516,12 +563,12 @@ bool checkFuncArgs(list<EType> decleration,list<ExpNode*>* callparams){
 	}
 	return true;
 }
-void CreateScope(){
+void AddScope(){
 
 	vartable.push_front(list<elementData>());
 	offsets.push(offsets.size()==0 ? 0 :offsets.top());
 }
-void DestroyScope(){
+void RemoveScope(){
 	endScope();
 	list<elementData> current_scope = vartable.front();
 
@@ -541,7 +588,7 @@ void DestroyScope(){
 				case E_BOOLEAN :		retType = "BOOL";  break;
 				case E_BYTE    : 		retType = "BYTE";  break;
 				case E_VOID    :		retType = "VOID";  break;
-				default : 				std::cout << "error in DestroyScope1 undefined variable"<<std::endl; exit(1); break;
+				default : 				std::cout << "error in RemoveScope1 undefined variable"<<std::endl; exit(1); break;
 			}
 		}
 		string var_type;
@@ -550,10 +597,24 @@ void DestroyScope(){
 			case E_BOOLEAN :			var_type = "BOOL"; break;
 			case E_BYTE    : 			var_type = "BYTE"; break;
 			case E_FUNC    :			var_type = makeFunctionType(retType.c_str(),*(ListToVector(var.params))); break;
-			default : 					std::cout << "error in DestroyScope2 undefined variable"<<std::endl; exit(1);
+			default : 					std::cout << "error in RemoveScope2 undefined variable"<<std::endl; exit(1);
 		}
 		printID(var.id.c_str(),var.offset,var_type.c_str());
 	}
+}
+
+int insertElement(elementData& element){
+	if(isExist(element.id)){
+		return -1;
+	}
+	if(element.id == "print" || element.id == "printi"){
+		return -1;
+	}
+	vartable.front().push_front(element);
+	
+	offsets.top()++;
+
+	return 0;
 }
 
 //bool checkExpBinOpTypes(ExpNode e1, ExpNode e2)

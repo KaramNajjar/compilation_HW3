@@ -14,7 +14,7 @@
 
 %%
 
-"void"								{ yylval = new VoidTypeNode(); return VOID;}
+"void"								{ yylval = new TypeNode(E_VOID); return VOID;}
 "int"								{ yylval = new TypeNode(E_INTEGER); return INT;}
 "byte"								{ yylval = new TypeNode(E_BYTE); return BYTE;}
 "b"									return B;

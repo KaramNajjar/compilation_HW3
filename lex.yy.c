@@ -851,7 +851,7 @@ do_action:	/* This label is used only to access EOF actions. */
 case 1:
 YY_RULE_SETUP
 #line 17 "scanner.lex"
-{ yylval = new VoidTypeNode(); return VOID;}
+{ yylval = new TypeNode(E_VOID); return VOID;}
 	YY_BREAK
 case 2:
 YY_RULE_SETUP

@@ -14,6 +14,7 @@ enum EType
 	E_INTEGER , E_BOOLEAN , E_BYTE , E_VOID ,E_STRING, E_FUNC , E_UNDEFINED
 };
 
+
 struct Node 
 {
 	
@@ -32,14 +33,6 @@ struct RetTypeNode : Node
 struct TypeNode : RetTypeNode
 {
 	TypeNode(EType etype) : RetTypeNode(etype)
-	{
-
-	}
-};
-
-struct VoidTypeNode : RetTypeNode
-{
-	VoidTypeNode() : RetTypeNode(E_VOID)
 	{
 
 	}
@@ -351,10 +344,10 @@ struct SwitchStatementNode : StatementNode{
 
 struct FormalDeclNode : Node
 {
-	TypeNode* type;
-	IdNode* id;
+	EType type;
+	string id;
 	
-	FormalDeclNode(TypeNode* type, IdNode* id)
+	FormalDeclNode(EType type, string id)
 	{
 		this->type = type;
 		this->id = id;
@@ -363,11 +356,11 @@ struct FormalDeclNode : Node
 
 struct FormalsListNode : Node
 {
-	list<FormalDeclNode>* formalDecls;
+	list<FormalDeclNode*>* formalDecls;
 	
 	FormalsListNode()
 	{
-		formalDecls = new list<FormalDeclNode>();
+		formalDecls = new list<FormalDeclNode*>();
 	}
 };
 
