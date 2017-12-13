@@ -33,6 +33,7 @@
 	bool isExist(string elementName);
 	elementData get_exists_element(string elementName);
 	int insertElement(elementData& element);
+	bool updateFuncParams(elementData& data);
 	
 	//Variables Defenitions
 	list<list<elementData> > vartable;
@@ -91,25 +92,37 @@
 
 
 
-Prog : Funcs 
+Prog : {vartable =list<list<elementData> >(); offsets =stack<int>(); AddScope();  } Funcs 
 	{
+		cout << "DEBUG : Entering Prog " << endl;
 		if(mainFuncsCounter != 1)
 		{
 			errorMainMissing();
 			exit(1);
 		}
+		cout << "DEBUG : Finishing Prog " << endl;
+		RemoveScope();
 	}
 	
 Funcs 
-	: { $$ = new FuncsListNode(); }
+	: 
+	{
+		cout << "DEBUG : Entering Empty Funcs " << endl;
+		$$ = new FuncsListNode(); 
+		cout << "DEBUG : Finishing Empty Funcs " << endl;
+
+		}
 	| FuncDecl Funcs 
 	{
+		cout << "DEBUG : Entering FuncDecl Funcs " << endl;
 		$$ = ((FuncsListNode*)$2);
 		((FuncsListNode*)$$)->funcsList->push_front((FuncNode*)$1);
+		cout << "DEBUG : Finishing FuncDecl Funcs " << endl;
 	} 
 
 FuncDecl : RetType ID
 		{
+			cout << "DEBUG : Entering FuncDecl : checking function " << endl;
 			string idVal = ((IdNode*)$2)->id;
 
 			if(isExist(idVal))
@@ -117,24 +130,30 @@ FuncDecl : RetType ID
 				errorDef(yylineno,idVal);
 				exit(1);
 			}
+			cout << "DEBUG : element doesn't exist" << endl;
 			elementData data = 
 			{
 				idVal,
 				E_FUNC,
 				0,
 				new list<FormalDeclNode*>(),
-				E_UNDEFINED
+				((TypeNode*)$1)->type
 			};
 			if(insertElement(data) != 0){
 				errorDef(yylineno,idVal);
 				exit(1);
 			}
+			offsets.top()--;
+			cout << "DEBUG : element successfully inserted : " << idVal << endl;
+			AddScope();
 			currentRetType = ((TypeNode*)$1)->type;
 			nextParamOffset = 0;
+			cout << "DEBUG : Finishing FuncDecl : checking function " << endl;
 		} 
-		LPAREN { AddScope(); } Formals RPAREN 
+		LPAREN Formals RPAREN 
 		{
 			string idVal = ((IdNode*)$2)->id;
+			cout <<"DEBUG : " << idVal << "size issssssssssss " << ((FormalsNode*)$5)->formalsListNode->formalDecls->size();
 			elementData data = 
 			{
 				idVal,
@@ -149,11 +168,12 @@ FuncDecl : RetType ID
 				mainFuncsCounter++;
 			}
 			
-			// TODO: if(updateFuncParams(data) == false)
-			// {
-				// std::cout << "error in FuncDel " << std::endl;
-				// exit(1);
-			// }
+			if(updateFuncParams(data) == false)
+			{
+			 std::cout << "error in FuncDel " << std::endl;
+			 exit(1);
+			}
+			
 		} LBRACE Statements RBRACE 
 		{
 			$$ = new FuncNode((TypeNode*)$1, (IdNode*)$2, (FormalsNode*)$5, (StatementNodes*)$8);
@@ -164,28 +184,34 @@ FuncDecl : RetType ID
 RetType : Type {$$ = (TypeNode*)$1;}
 		| VOID {$$ = new TypeNode(E_VOID);}
 		
-Formals : FormalsList {$$ = new FormalsNode((FormalsListNode*)$1);}
-		| {$$ = new FormalsNode(new FormalsListNode());}
+Formals : FormalsList 
+			{
+				$$ = new FormalsNode((FormalsListNode*)$1);
+			}
+		|	{$$ = new FormalsNode(new FormalsListNode());}
 	// mostly the warning exists here (*formal*)	
 FormalsList : {nextParamOffset--;} FormalDecl FormalsTail
-			{ 	
+			{ 		
+				$$ = ((FormalsListNode*)$3);
+				cout << "DEBUG : DO WE GET HERE ?" << endl;
+				((FormalsListNode*)$$)->formalDecls->push_front((FormalDeclNode*)$2);
 				elementData data = 
 				{
 					((FormalDeclNode*)$2)->id,
 					((FormalDeclNode*)$2)->type,
 					nextParamOffset,
-					new list<FormalDeclNode*>(),
+					((FormalsListNode*)$$)->formalDecls,
 					E_UNDEFINED
 				};  
+
+				
 				if((insertElement(data) != 0)){
 					errorDef(yylineno,((FormalDeclNode*)$2)->id);
 					exit(1);
 				}
 				offsets.top()--;
 				nextParamOffset++;
-								
-				$$ = ((FormalsListNode*)$3);
-				((FormalsListNode*)$$)->formalDecls->push_front((FormalDeclNode*)$2);
+							
 			}
 			
 FormalsTail : COMMA FormalsList { $$ = ((FormalsListNode*)$2); }
@@ -203,6 +229,7 @@ Statement : LBRACE { AddScope(); } Statements RBRACE { RemoveScope(); }
 
 		| Type ID SC 
 			{ 	
+				cout << "DEBUG : Entering type decleration" << endl;
 				elementData data = 
 				{
 					((IdNode*)$2)->id,
@@ -215,6 +242,7 @@ Statement : LBRACE { AddScope(); } Statements RBRACE { RemoveScope(); }
 					errorDef(yylineno,((IdNode*)$2)->id);
 					exit(1);
 				}
+				cout << "DEBUG : Finishing type decleration" << endl;
 			}
 			
 		| Type ID ASSIGN Exp SC 
@@ -259,7 +287,7 @@ Statement : LBRACE { AddScope(); } Statements RBRACE { RemoveScope(); }
 			}
 		| RETURN Exp SC
 			{
-				if(((ExpNode*)$3)->expType != currentRetType)
+				if(((ExpNode*)$2)->expType != currentRetType)
 				{
 					errorMismatch(yylineno);
 					exit(1);
@@ -267,14 +295,15 @@ Statement : LBRACE { AddScope(); } Statements RBRACE { RemoveScope(); }
 				}
 			}
 		| IF LPAREN Exp 
-			{ 
+			{
+				cout << "DEBUG : Checking if If statement expression is boolean" << endl;
 				statementStarted = true;
 				if(((ExpNode*)$3)->expType != E_BOOLEAN)
 				{
 					errorMismatch(yylineno);
 					exit(1);
 				}
-
+				cout << "DEBUG : Finished Checking if If statement expression is boolean" << endl;
 			} RPAREN { AddScope(); } Statement { RemoveScope(); } IfContinue
 		| WHILE LPAREN Exp 
 			{
@@ -323,39 +352,49 @@ CaseDec : CASE NUM COLON Statement BREAK SC
 	
 Call : ID LPAREN CheckFunc ExpList RPAREN
 		{
+			cout << "DEBUG : Entering Call Function" << endl;
+			
 			string idVal = ((IdNode*)$1)->id;
 			elementData data = get_exists_element(idVal);
 			if(idVal == "print" || idVal == "printi")
 			{
+					cout << "DEBUG : It is print Function,checking params" << endl;
 					list<EType> decleration = list<EType>();
 					idVal == "print" ? decleration.push_back(E_STRING) : decleration.push_back(E_INTEGER);
-	
-					if(checkFuncArgs2(decleration,((ExpListNode*)$1)->params) == false)
+
+					if(checkFuncArgs2(decleration,((ExpListNode*)$4)->params) == false)
 					{
 						vector<string> v = vector<string>();
-						idVal == "print" ? v.push_back("STRING") : v.push_back("INT");;
+						idVal == "print" ? v.push_back("STRING") : v.push_back("INT");
 						errorPrototypeMismatch(yylineno,idVal,v);
 						exit(1);
 					}
+					cout << "DEBUG : print Function param as expected" << endl;
 				$$ = new CallNode((IdNode*)$1,E_VOID);
 			}
 			else{
-				if(checkFuncArgs(data.params,((ExpListNode*)$1)->params) == false )
+				cout << "DEBUG : OPA in " << idVal<<endl;
+				cout << "DEBUG : " <<data.params->size()<<endl;
+			
+				if(checkFuncArgs(data.params,((ExpListNode*)$4)->params) == false )
 				{
+						cout << "DEBUG : OPA1" << endl;
 						errorPrototypeMismatch(yylineno,idVal,*(ListToVector(data.params)));
 						exit(1);
 						
 				}
+				cout << "DEBUG : OPA2" << endl;
 				$$ = new CallNode((IdNode*)$1,data.retType);
 			}
-	
+			cout << "DEBUG : Finishing Call Function" << endl;
+
 	
 		}
 	| ID LPAREN CheckFunc RPAREN
 		{
 			string idVal = ((IdNode*)$1)->id;
 			elementData data = get_exists_element(idVal);
-	
+
 			if(data.params->size() != 0)
 			{
 				errorPrototypeMismatch(yylineno,idVal,*(ListToVector(data.params)));
@@ -368,6 +407,7 @@ CheckFunc :
 	{
 		
 		string idVal = ((IdNode*)$-1)->id;
+		
 		if(idVal != "print" && idVal != "printi"){
 			if(isExist(idVal) == false)
 			{
@@ -403,7 +443,7 @@ Exp : LPAREN Exp RPAREN { $$ = $2; }
 		
 	| Exp BINOP Exp 
 		{ 
-			cout << "Binop exp started " << endl;
+			cout << "DEBUG : Binop exp started " << endl;
 			
 			
 			if((((ExpNode*)$1))->expType != E_INTEGER && (((ExpNode*)$1))->expType != E_BYTE)
@@ -420,20 +460,20 @@ Exp : LPAREN Exp RPAREN { $$ = $2; }
 			$$ = new BinExpNode(((ExpNode*)$1),(BinOpNode*)$2,((ExpNode*)$3)); 
 			((ExpNode*)$$)->expType = (((ExpNode*)$1))->expType;
 			
-			cout << "Binop exp finished" << endl;
+			cout << "DEBUG : Binop exp finished" << endl;
 
 		}
 		
 	| ID 
 		{
-			cout << "ID exp started" << endl;
+			cout << "DEBUG : ID exp started" << endl;
 			if(isExist(((IdNode*)$1)->id) == false || get_exists_element(((IdNode*)$1)->id).type == E_FUNC){
 						errorUndef(yylineno,((IdNode*)$1)->id);
 						exit(1);
 			}
 				
 			$$ = new IdExpNode((IdNode*)$1,get_exists_element(((IdNode*)$1)->id).type); 
-			cout << "ID exp finished" << endl;
+			cout << "DEBUG : ID exp finished" << endl;
 		}
 	| Call  
 		{
@@ -446,17 +486,17 @@ Exp : LPAREN Exp RPAREN { $$ = $2; }
 		}
 	| NUM 
 		{ 
-			cout << "NUM exp started" << endl;
+			cout << "DEBUG : NUM exp started" << endl;
 			
 			$$ = new NumExpNode((NumNode*)$1); 
 			
-			cout << "NUM exp finished" << endl;
+			cout << "DEBUG : NUM exp finished" << endl;
 
 		}
 		
 	| NUM B 
 		{
-			cout << "NUM B exp started" << endl;
+			cout << "DEBUG : NUM B exp started" << endl;
 
 			if(((NumNode*)$1)->num > 255){
 				string str = "" + ((NumNode*)$1)->num;
@@ -465,15 +505,15 @@ Exp : LPAREN Exp RPAREN { $$ = $2; }
 			}
 			$$ = new NumBExpNode((NumNode*)$1); 
 			
-			cout << "NUM B exp finished" << endl;
+			cout << "DEBUG : NUM B exp finished" << endl;
 
 		}
 
 	| STRING 
 		{
-			cout << "String exp started" << endl;
+			cout << "DEBUG : String exp started" << endl;
 			$$ = new StringExpNode((StringNode*)$1); 
-			cout << "String exp finished" << endl;
+			cout << "DEBUG : String exp finished" << endl;
 		}
 		
 		
@@ -505,7 +545,11 @@ Exp : LPAREN Exp RPAREN { $$ = $2; }
 		}
 	| Exp RELOP Exp	
 		{
-			if(((ExpNode*)$1)->expType != E_INTEGER || ((ExpNode*)$3)->expType != E_INTEGER ){
+			if(((ExpNode*)$1)->expType != E_INTEGER && ((ExpNode*)$1)->expType != E_BYTE ){
+				errorMismatch(yylineno);
+				exit(1);
+			 }
+			 if(((ExpNode*)$3)->expType != E_INTEGER && ((ExpNode*)$3)->expType != E_BYTE ){
 				errorMismatch(yylineno);
 				exit(1);
 			 }
@@ -515,14 +559,13 @@ Exp : LPAREN Exp RPAREN { $$ = $2; }
 
 int main()
 {
-	cout << "Main: " << endl;
+	cout << "DEBUG : Entering Main" << endl;
 	int result = yyparse();
 	return result ; 
 }
 
 int yyerror(string message)
 {
-	cout << "Error: " << endl;
 	errorSyn(yylineno);
 	exit(1);
 }
@@ -530,7 +573,7 @@ int yyerror(string message)
 bool isLegalAssignment(EType fromType , EType toType)
 {
 	if((fromType == E_UNDEFINED) || (toType == E_UNDEFINED) ) {
-		std::cout << "error in isLegalAssignment " << std::endl;
+		std::cout << "DEBUG : error in isLegalAssignment " << std::endl;
 		exit(1);
 	}
 	if(fromType == toType)
@@ -566,17 +609,25 @@ std::vector<string>* ListToVector(const list<FormalDeclNode*>*  list )
 
 bool isExist(string elementId)
 {
+	
+	bool founded = false;
+	cout << "DEBUG : element id: " << elementId <<endl;
+	cout << "DEBUG : current exist elements are : "  <<endl;
+	cout << "DEBUG : ------------------------------------------------------ " <<endl;
 	list<list<elementData> >::const_iterator end = vartable.end();
 	for(list<list<elementData> >::const_iterator element = vartable.begin()  ; element!=end ;  element++ )
 	{
 		list<elementData>::const_iterator lend = (*element).end();
 		for(list<elementData>::const_iterator lentry = (*element).begin()  ; lentry != lend ; lentry++)
 		{
+			cout<< "DEBUG : " << (*lentry).id << endl;
 			if((*lentry).id == elementId ) 
-				return true ;
+				founded = true;
 		}
 	}
-	return false ; 
+	cout << "DEBUG : ------------------------------------------------------ " <<endl;
+
+	return founded;
 }
 elementData get_exists_element(string elementId){
 	
@@ -594,12 +645,17 @@ elementData get_exists_element(string elementId){
 
 bool checkFuncArgs(list<FormalDeclNode*>* decleration,list<ExpNode*>* callparams){
 
+	cout << "DEBUG : checking args" << endl;
+	
 	if(decleration->size() != callparams->size()) return false;
+	cout << "DEBUG : checking args1" << endl;
 	list<ExpNode*>::const_iterator element2 = callparams->begin();
+	cout << "DEBUG : checking args2" << endl;
 	for(list<FormalDeclNode*>::const_iterator element = decleration->begin()  ; element!=decleration->end() ;  ++element ,++element2)
 	{	
 		if(!isLegalAssignment((*element2)->expType,(*element)->type)) return false;
 	}
+	cout << "DEBUG : checking args3" << endl;
 	return true;
 }
 
@@ -620,20 +676,27 @@ void AddScope(){
 	offsets.push(offsets.size()==0 ? 0 :offsets.top());
 }
 void RemoveScope(){
+	
+	bool donePrintingPrintFuncs = false;
 	endScope();
-	list<elementData> current_scope = vartable.front();
+	list<elementData> currScope = vartable.front();
 
 	vartable.pop_front();
 	offsets.pop(); 
 
-    list<elementData>::reverse_iterator lend = current_scope.rend();
-	for(list<elementData>::reverse_iterator lentry = current_scope.rbegin()  ; lentry != lend ; lentry++){
+    list<elementData>::reverse_iterator lend = currScope.rend();
+	for(list<elementData>::reverse_iterator lentry = currScope.rbegin()  ; lentry != lend ; lentry++){
 	
-	elementData var = *lentry;
+		elementData var = *lentry;
 		string retType;
 		
 		if(var.type == E_FUNC){
 			
+			if(donePrintingPrintFuncs == false){
+				cout << "print (STRING)->VOID 0" << endl;
+				cout << "printi (INT)->VOID 0" << endl;
+				donePrintingPrintFuncs = true;
+			}
 			switch(var.retType){
 				case E_INTEGER :		retType = "INT";   break;
 				case E_BOOLEAN :		retType = "BOOL";  break;
@@ -647,27 +710,42 @@ void RemoveScope(){
 			case E_INTEGER :			var_type = "INT";  break;
 			case E_BOOLEAN :			var_type = "BOOL"; break;
 			case E_BYTE    : 			var_type = "BYTE"; break;
-			case E_FUNC    :			var_type = makeFunctionType(retType.c_str(),*(ListToVector(var.params))); break;
+			case E_FUNC    :			var_type = makeFunctionType(retType,*(ListToVector(var.params))); break;
 			default : 					std::cout << "error in RemoveScope2 undefined variable"<<std::endl; exit(1);
 		}
-		printID(var.id.c_str(),var.offset,var_type.c_str());
+		
+		printID(var.id,var.offset,var_type);
 	}
 }
 
 int insertElement(elementData& element){
+	cout << "DEBUG : inside insert element" << endl;
 	if(isExist(element.id)){
 		return -1;
 	}
 	if(element.id == "print" || element.id == "printi"){
 		return -1;
 	}
-	vartable.front().push_front(element);
 	
+	vartable.front().push_front(element);
 	offsets.top()++;
+	
 
 	return 0;
 }
 
+bool updateFuncParams(elementData& data){
+	
+	list<elementData>& globalScope = vartable.back();
+	for(list<elementData>::iterator it = globalScope.begin() ; it != globalScope.end() ;++it ){
+
+	if((*it).id == data.id){
+			(*it) = data;
+			return true;
+		}
+	}
+	return false;
+}
 //bool checkExpBinOpTypes(ExpNode e1, ExpNode e2)
 //{
 //	if(typeid(e1).hash_code() == typeid(NumExpNode*).hash_code() || typeid(e1).hash_code() == typeid(NumBExpNode*).hash_code())
