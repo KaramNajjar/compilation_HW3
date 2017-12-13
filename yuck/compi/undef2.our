@@ -1,0 +1,9 @@
+---end scope---
+x INT -1
+bbb BYTE -2
+bool2 BOOL -3
+---end scope---
+x INT -1
+---end scope---
+yossiTheKing666 INT 2
+line 17: variable yossiTheKing666 is not defined

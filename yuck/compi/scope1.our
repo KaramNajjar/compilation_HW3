@@ -1,0 +1,5 @@
+---end scope---
+x INT -1
+---end scope---
+---end scope---
+line 18: identifier z is already defined

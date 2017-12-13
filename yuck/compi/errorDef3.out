@@ -1,0 +1,7 @@
+---end scope---
+x INT -1
+bbb BYTE -2
+bool2 BOOL -3
+---end scope---
+x INT -1
+line 11: identifier f is already defined

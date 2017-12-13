@@ -1,0 +1,33 @@
+
+int f(int an1, byte an2,bool an3,int an4){
+	int b0;
+	bool b1;
+	int b2 = 5;
+	{
+		bool c3 = false;
+		byte c4 = 6b;
+		while(true)
+		{
+			int d5;
+			byte d6;
+		}
+		bool c5;
+		byte c6;
+		while(true) d5=5;
+	}
+	while(true)
+		switch(b0){
+		case 1: while(true){int e3; bool e4; switch(e3){case 1: while(true) int f4; default:break;};
+		case 2: int e3;
+		default: break;
+		};
+	
+	
+}
+
+
+
+void main()
+{
+	int x;
+}

@@ -1,0 +1,126 @@
+int yyy(int mis){
+	return 5;
+}
+void swap(int a, int xxx) {
+	a=xxx;
+	xxx=a;
+	int temp=a;
+	xxx=temp;
+	byte c;
+	xxx=c;
+}
+int mod(int dividee, int divider) {
+	int xxx = 211b;
+	while (dividee-divider>0)
+		dividee=dividee-divider;
+	int forfun;
+	while (forfun!=forfun) forfun=divider;
+	bool k; while(k) while(k) while(k) while(k) while(k) while(k) {print("kaboom!");}
+	return dividee;
+	return 5b;
+	if (xxx==xxx) 
+	return xxx+12;
+}
+int gcd(int x, int y) {
+	yyy(y);
+	int lll = yyy(x);
+	mod(10,20b);
+	mod(x,7);
+	mod(x,y);
+	if(x==0) {
+		return y;
+	}
+	if (y==0) {
+		return x;
+	}
+	return gcd(mod(x,y),x);
+}
+int gcd2(int x, int y) {
+	if (x<y) swap(x,y);
+	if (y==0) {
+		return x;
+	}
+	return gcd2(mod(x,y),x);
+}
+
+byte scopes() {
+	bool a1;
+	int b1;
+	bool c1;
+	byte d1 = 15 b;
+	if (a1) {
+		int a2;
+		a2=a2+a2;
+		int b2;
+		b2=a2+b2;
+		int c2=12b;
+		int d2=100;
+		if (d2>d2) {
+			if (d2<d2)
+				return 25b;
+		}
+	}
+	int x1;
+	bool y1;
+	int z1=145b;
+	byte big1;
+	return 1b;
+	while(true) {{{{return 1b;}}}}
+}
+
+int f(int variable)
+{
+if(variable>25b)
+{
+	variable=variable-1;
+}
+if(true)	byte home = 15b ;
+return 13b*variable;
+}
+
+
+void main(){
+
+	int x=3;
+	int y;
+	int z;
+	bool xxx;
+	bool c;
+	byte big;
+	byte big2;
+	switch(x+y*(z+234b)-255b){
+
+		case 1:
+		case 2: print("hello");
+		case 8: {
+			print("hello");
+			printi(5b);
+			main(); 
+			int num = f(y+z);
+			gcd2(f(x),7);
+			int num2 = f(gcd(z, 13));
+			f(f(x));
+			f(f(5));
+			f(f(14b));
+			gcd(gcd2(4,f(f(f(0b)))),gcd(1,1b));
+			gcd(gcd(x,y),f(gcd(z,13)));
+
+			int w=f(x)
+			+f(y)
+			*f(y+z)
+			+gcd(y,z)
+			+gcd
+			(gcd
+			(f(x)
+			,
+			f
+			(
+			6
+			)
+			)
+			,
+			6);
+		}
+		};
+}
+

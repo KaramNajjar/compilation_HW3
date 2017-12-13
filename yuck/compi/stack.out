@@ -1,0 +1,5 @@
+---end scope---
+d5 INT 5
+d6 BYTE 6
+---end scope---
+line 16: variable d5 is not defined

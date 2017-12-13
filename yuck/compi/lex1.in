@@ -1,0 +1,46 @@
+bool g(int x, byte bbb, bool bool2){
+	return x>13@;
+}
+
+int f(int x) {
+	return x*x;
+}
+
+void main()
+{
+printi(50);
+	bool x;
+	bool y = false;
+	
+	//hereeah
+	int z;
+	z=3;
+	if (x) {
+		z=4;
+	}
+	else y=true;
+	y=false;
+	if (y or x or not (y or x) and not not not not x and x or (x and y) and (z<z or (((z<=z)))))
+		byte big;
+	byte big;
+	while (y) {int sc1=5;}
+	while (false) {bool sc1;}  // the cake is a lie :(
+	if (big > z) 
+		print("hello!");//1
+	else {
+		print("not hello");
+		z=8+2*(2+5);
+		int sc1=2+4+1+1+1+1444+f(5)+f(big);
+		bool sc2=false;
+		while(sc2) sc1=big+big;//2
+		while(sc2 or x) {
+			bool sc3;
+			switch(z) {
+				case 4:
+				case 8b: break;
+				case 45: {break; printi(50);}//3
+				default: main();
+			};//4
+		}
+	}
+}

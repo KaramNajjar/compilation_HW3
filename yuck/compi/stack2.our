@@ -1,0 +1,19 @@
+---end scope---
+d5 INT 5
+d6 BYTE 6
+---end scope---
+---end scope---
+d5 INT 7
+---end scope---
+c3 BOOL 3
+c4 BYTE 4
+c5 BOOL 5
+c6 BYTE 6
+---end scope---
+f4 INT 5
+---end scope---
+---end scope---
+e3 INT 3
+e4 BOOL 4
+---end scope---
+line 22: unexpected break statement

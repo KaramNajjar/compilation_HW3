@@ -1,0 +1,17 @@
+---end scope---
+mis INT -1
+---end scope---
+a INT -1
+xxx INT -2
+temp INT 0
+c BYTE 1
+---end scope---
+---end scope---
+---end scope---
+---end scope---
+---end scope---
+---end scope---
+---end scope---
+---end scope---
+---end scope---
+line 20: type mismatch

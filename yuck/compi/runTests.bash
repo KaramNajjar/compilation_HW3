@@ -1,0 +1,1 @@
+for fname in *.in; do name=${fname:0:${#fname}-3}; in=".in"; out=".out"; our=".our"; ./hwFiles/hw3 < $name$in > $name$our; sed --in-place '/DEBUG/d' $name$our; echo wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww Ran: $name wwwwwwwwwwwwwwwwwwwwwwwwwww; diff $name$our $name$out; done

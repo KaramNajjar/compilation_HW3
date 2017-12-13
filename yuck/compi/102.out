@@ -1,0 +1,35 @@
+---end scope---
+x INT -1
+---end scope---
+---end scope---
+---end scope---
+---end scope---
+big BYTE 4
+---end scope---
+sc1 INT 5
+---end scope---
+---end scope---
+sc1 BOOL 5
+---end scope---
+---end scope---
+---end scope---
+---end scope---
+---end scope---
+---end scope---
+sc3 BOOL 7
+---end scope---
+---end scope---
+sc1 INT 5
+sc2 BOOL 6
+---end scope---
+---end scope---
+x BOOL 0
+y BOOL 1
+semek BYTE 2
+z INT 3
+big BYTE 4
+---end scope---
+print (STRING)->VOID 0
+printi (INT)->VOID 0
+f (INT)->INT 0
+main ()->VOID 0
