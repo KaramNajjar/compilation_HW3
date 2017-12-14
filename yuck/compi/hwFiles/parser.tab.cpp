@@ -498,14 +498,14 @@ static const yytype_uint8 yytranslate[] =
   /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_uint16 yyrline[] =
 {
-       0,    95,    95,    95,   109,   115,   124,   154,   123,   184,
-     185,   187,   193,   195,   195,   219,   220,   222,   227,   228,
-     230,   230,   232,   250,   269,   281,   282,   290,   300,   309,
-     309,   299,   311,   321,   310,   327,   338,   346,   346,   337,
-     348,   349,   349,   351,   352,   354,   355,   356,   357,   358,
-     359,   361,   401,   415,   435,   442,   450,   451,   452,   454,
-     456,   483,   494,   503,   513,   528,   536,   537,   538,   546,
-     554,   562
+       0,    95,    95,    95,   107,   111,   118,   144,   117,   173,
+     174,   176,   182,   184,   184,   207,   208,   210,   215,   216,
+     218,   218,   220,   236,   255,   267,   268,   276,   286,   293,
+     293,   285,   295,   305,   294,   311,   320,   328,   328,   319,
+     330,   331,   331,   333,   334,   336,   337,   338,   339,   340,
+     341,   343,   374,   388,   408,   413,   419,   420,   421,   423,
+     425,   448,   457,   466,   473,   486,   492,   493,   494,   502,
+     510,   518
 };
 #endif
 
@@ -1381,44 +1381,37 @@ yyreduce:
   case 3:
 #line 96 "parser.ypp" /* yacc.c:1646  */
     {
-		cout << "DEBUG : Entering Prog " << endl;
 		if(mainFuncsCounter != 1)
 		{
 			errorMainMissing();
 			exit(1);
 		}
-		cout << "DEBUG : Finishing Prog " << endl;
 		RemoveScope();
 	}
-#line 1394 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1392 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 4:
-#line 109 "parser.ypp" /* yacc.c:1646  */
+#line 107 "parser.ypp" /* yacc.c:1646  */
     {
-		cout << "DEBUG : Entering Empty Funcs " << endl;
 		(yyval) = new FuncsListNode(); 
-		cout << "DEBUG : Finishing Empty Funcs " << endl;
 
 		}
-#line 1405 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1401 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 5:
-#line 116 "parser.ypp" /* yacc.c:1646  */
+#line 112 "parser.ypp" /* yacc.c:1646  */
     {
-		cout << "DEBUG : Entering FuncDecl Funcs " << endl;
 		(yyval) = ((FuncsListNode*)(yyvsp[0]));
 		((FuncsListNode*)(yyval))->funcsList->push_front((FuncNode*)(yyvsp[-1]));
-		cout << "DEBUG : Finishing FuncDecl Funcs " << endl;
 	}
-#line 1416 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1410 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 6:
-#line 124 "parser.ypp" /* yacc.c:1646  */
+#line 118 "parser.ypp" /* yacc.c:1646  */
     {
-			cout << "DEBUG : Entering FuncDecl : checking function " << endl;
 			string idVal = ((IdNode*)(yyvsp[0]))->id;
 
 			if(isExist(idVal))
@@ -1426,7 +1419,6 @@ yyreduce:
 				errorDef(yylineno,idVal);
 				exit(1);
 			}
-			cout << "DEBUG : element doesn't exist" << endl;
 			elementData data = 
 			{
 				idVal,
@@ -1440,20 +1432,17 @@ yyreduce:
 				exit(1);
 			}
 			offsets.top()--;
-			cout << "DEBUG : element successfully inserted : " << idVal << endl;
 			AddScope();
 			currentRetType = ((TypeNode*)(yyvsp[-1]))->type;
 			nextParamOffset = 0;
-			cout << "DEBUG : Finishing FuncDecl : checking function" << endl;
 		}
-#line 1450 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1440 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 7:
-#line 154 "parser.ypp" /* yacc.c:1646  */
+#line 144 "parser.ypp" /* yacc.c:1646  */
     {
 			string idVal = ((IdNode*)(yyvsp[-4]))->id;
-			cout <<"DEBUG BUG : " << idVal << "size issssssssssss " << ((FormalsNode*)(yyvsp[-1]))->formalsListNode->formalDecls->size() << std::endl;
 			elementData data = 
 			{
 				idVal,
@@ -1475,58 +1464,57 @@ yyreduce:
 			}
 			
 		}
-#line 1479 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1468 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 8:
-#line 178 "parser.ypp" /* yacc.c:1646  */
+#line 167 "parser.ypp" /* yacc.c:1646  */
     {
 			(yyval) = new FuncNode((TypeNode*)(yyvsp[-9]), (IdNode*)(yyvsp[-8]), (FormalsNode*)(yyvsp[-5]), (StatementNodes*)(yyvsp[-2]));
 			currentRetType = E_UNDEFINED;
 			RemoveScope();
 		}
-#line 1489 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1478 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 9:
-#line 184 "parser.ypp" /* yacc.c:1646  */
+#line 173 "parser.ypp" /* yacc.c:1646  */
     {(yyval) = (TypeNode*)(yyvsp[0]);}
-#line 1495 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1484 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 10:
-#line 185 "parser.ypp" /* yacc.c:1646  */
+#line 174 "parser.ypp" /* yacc.c:1646  */
     {(yyval) = new TypeNode(E_VOID);}
-#line 1501 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1490 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 11:
-#line 188 "parser.ypp" /* yacc.c:1646  */
+#line 177 "parser.ypp" /* yacc.c:1646  */
     {
 				
 				
 				(yyval) = new FormalsNode((FormalsListNode*)(yyvsp[0]));
 			}
-#line 1511 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1500 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 12:
-#line 193 "parser.ypp" /* yacc.c:1646  */
+#line 182 "parser.ypp" /* yacc.c:1646  */
     {(yyval) = new FormalsNode(new FormalsListNode());}
-#line 1517 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1506 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 13:
-#line 195 "parser.ypp" /* yacc.c:1646  */
+#line 184 "parser.ypp" /* yacc.c:1646  */
     {nextParamOffset--;}
-#line 1523 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1512 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 14:
-#line 196 "parser.ypp" /* yacc.c:1646  */
+#line 185 "parser.ypp" /* yacc.c:1646  */
     { 		
 				(yyval) = ((FormalsListNode*)(yyvsp[0]));
-				cout << "DEBUG : DO WE GET HERE ?" << endl;
 				((FormalsListNode*)(yyval))->formalDecls->push_front((FormalDeclNode*)(yyvsp[-1]));
 				elementData data = 
 				{
@@ -1546,45 +1534,44 @@ yyreduce:
 				nextParamOffset++;
 							
 			}
-#line 1550 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1538 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 15:
-#line 219 "parser.ypp" /* yacc.c:1646  */
+#line 207 "parser.ypp" /* yacc.c:1646  */
     { (yyval) = ((FormalsListNode*)(yyvsp[0])); }
-#line 1556 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1544 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 16:
-#line 220 "parser.ypp" /* yacc.c:1646  */
+#line 208 "parser.ypp" /* yacc.c:1646  */
     { (yyval) = new FormalsListNode(); }
-#line 1562 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1550 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 17:
-#line 223 "parser.ypp" /* yacc.c:1646  */
+#line 211 "parser.ypp" /* yacc.c:1646  */
     { 
 				(yyval) = new FormalDeclNode(((TypeNode*)(yyvsp[-1]))->type,((IdNode*)(yyvsp[0]))->id);
 			}
-#line 1570 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1558 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 20:
-#line 230 "parser.ypp" /* yacc.c:1646  */
+#line 218 "parser.ypp" /* yacc.c:1646  */
     { AddScope(); }
-#line 1576 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1564 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 21:
-#line 230 "parser.ypp" /* yacc.c:1646  */
+#line 218 "parser.ypp" /* yacc.c:1646  */
     { RemoveScope(); }
-#line 1582 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1570 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 22:
-#line 233 "parser.ypp" /* yacc.c:1646  */
+#line 221 "parser.ypp" /* yacc.c:1646  */
     { 	
-				cout << "DEBUG : Entering type decleration" << endl;
 				elementData data = 
 				{
 					((IdNode*)(yyvsp[-1]))->id,
@@ -1597,13 +1584,12 @@ yyreduce:
 					errorDef(yylineno,((IdNode*)(yyvsp[-1]))->id);
 					exit(1);
 				}
-				cout << "DEBUG : Finishing type decleration" << endl;
 			}
-#line 1603 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1589 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 23:
-#line 251 "parser.ypp" /* yacc.c:1646  */
+#line 237 "parser.ypp" /* yacc.c:1646  */
     { 
 				elementData data = 
 				{
@@ -1622,11 +1608,11 @@ yyreduce:
 					exit(1);
 				}
 			}
-#line 1626 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1612 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 24:
-#line 270 "parser.ypp" /* yacc.c:1646  */
+#line 256 "parser.ypp" /* yacc.c:1646  */
     {
 				if(isExist(((IdNode*)(yyvsp[-3]))->id) == false || get_exists_element(((IdNode*)(yyvsp[-3]))->id).type == E_FUNC){
 					errorUndef(yylineno,((IdNode*)(yyvsp[-3]))->id);
@@ -1638,11 +1624,11 @@ yyreduce:
 				}
 			
 			}
-#line 1642 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1628 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 26:
-#line 283 "parser.ypp" /* yacc.c:1646  */
+#line 269 "parser.ypp" /* yacc.c:1646  */
     {
 				if(currentRetType != E_VOID)
 				{
@@ -1650,11 +1636,11 @@ yyreduce:
 					exit(1);
 				}
 			}
-#line 1654 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1640 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 27:
-#line 291 "parser.ypp" /* yacc.c:1646  */
+#line 277 "parser.ypp" /* yacc.c:1646  */
     {
 				if(isLegalAssignment(((ExpNode*)(yyvsp[-1]))->expType,currentRetType) == false)
 				{
@@ -1663,38 +1649,36 @@ yyreduce:
 				
 				}
 			}
-#line 1667 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1653 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 28:
-#line 300 "parser.ypp" /* yacc.c:1646  */
+#line 286 "parser.ypp" /* yacc.c:1646  */
     {
-				cout << "DEBUG : Checking if If statement expression is boolean" << endl;
 				statementStarted = true;
 				if(((ExpNode*)(yyvsp[0]))->expType != E_BOOLEAN)
 				{
 					errorMismatch(yylineno);
 					exit(1);
 				}
-				cout << "DEBUG : Finished Checking if If statement expression is boolean" << endl;
 			}
-#line 1682 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1666 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 29:
-#line 309 "parser.ypp" /* yacc.c:1646  */
+#line 293 "parser.ypp" /* yacc.c:1646  */
     { AddScope(); }
-#line 1688 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1672 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 30:
-#line 309 "parser.ypp" /* yacc.c:1646  */
+#line 293 "parser.ypp" /* yacc.c:1646  */
     { RemoveScope(); }
-#line 1694 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1678 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 32:
-#line 311 "parser.ypp" /* yacc.c:1646  */
+#line 295 "parser.ypp" /* yacc.c:1646  */
     {
 				statementStarted = true;
 				whilesNum++;
@@ -1705,41 +1689,39 @@ yyreduce:
 				}
 				
 			}
-#line 1709 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1693 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 33:
-#line 321 "parser.ypp" /* yacc.c:1646  */
+#line 305 "parser.ypp" /* yacc.c:1646  */
     { AddScope(); }
-#line 1715 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1699 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 34:
-#line 322 "parser.ypp" /* yacc.c:1646  */
+#line 306 "parser.ypp" /* yacc.c:1646  */
     { 
 				RemoveScope(); 
 				statementStarted = false;
 				whilesNum--;
 			}
-#line 1725 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1709 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 35:
-#line 328 "parser.ypp" /* yacc.c:1646  */
+#line 312 "parser.ypp" /* yacc.c:1646  */
     {
 				if(switchesNumber == 0 && whilesNum == 0)
 				{
-					cout << "DEBUG : switchesNumber " << switchesNumber << endl;
-					cout << "DEBUG : whilesNum " << whilesNum << endl;
 					errorUnexpectedBreak(yylineno);
 					exit(1);
 				}
 			}
-#line 1739 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1721 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 36:
-#line 338 "parser.ypp" /* yacc.c:1646  */
+#line 320 "parser.ypp" /* yacc.c:1646  */
     {
 				EType expType = ((ExpNode*)(yyvsp[0]))->expType;
 				if(expType != E_INTEGER && expType != E_BYTE)
@@ -1748,67 +1730,47 @@ yyreduce:
 					exit(1);
 				}
 			}
-#line 1752 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1734 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 37:
-#line 346 "parser.ypp" /* yacc.c:1646  */
-    {AddScope(); switchesNumber++ ;cout << "DEBUG : switch started" << endl;}
-#line 1758 "parser.tab.cpp" /* yacc.c:1646  */
+#line 328 "parser.ypp" /* yacc.c:1646  */
+    {AddScope(); switchesNumber++ ;}
+#line 1740 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 38:
-#line 346 "parser.ypp" /* yacc.c:1646  */
-    {RemoveScope(); switchesNumber--; cout << "DEBUG : switch ended" << endl;}
-#line 1764 "parser.tab.cpp" /* yacc.c:1646  */
+#line 328 "parser.ypp" /* yacc.c:1646  */
+    {RemoveScope(); switchesNumber--; }
+#line 1746 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 40:
-#line 348 "parser.ypp" /* yacc.c:1646  */
+#line 330 "parser.ypp" /* yacc.c:1646  */
     {}
-#line 1770 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1752 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 41:
-#line 349 "parser.ypp" /* yacc.c:1646  */
+#line 331 "parser.ypp" /* yacc.c:1646  */
     { AddScope(); }
-#line 1776 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1758 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 42:
-#line 349 "parser.ypp" /* yacc.c:1646  */
+#line 331 "parser.ypp" /* yacc.c:1646  */
     { RemoveScope(); }
-#line 1782 "parser.tab.cpp" /* yacc.c:1646  */
-    break;
-
-  case 45:
-#line 354 "parser.ypp" /* yacc.c:1646  */
-    {cout << "DEBUG : case num finished" << endl;}
-#line 1788 "parser.tab.cpp" /* yacc.c:1646  */
-    break;
-
-  case 47:
-#line 356 "parser.ypp" /* yacc.c:1646  */
-    {cout << "DEBUG : default finished" << endl;}
-#line 1794 "parser.tab.cpp" /* yacc.c:1646  */
-    break;
-
-  case 50:
-#line 359 "parser.ypp" /* yacc.c:1646  */
-    {cout << "DEBUG : default finished" << endl;}
-#line 1800 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1764 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 51:
-#line 362 "parser.ypp" /* yacc.c:1646  */
+#line 344 "parser.ypp" /* yacc.c:1646  */
     {
-			cout << "DEBUG : Entering Call Function" << endl;
 			
 			string idVal = ((IdNode*)(yyvsp[-4]))->id;
 			elementData data = get_exists_element(idVal);
 			if(idVal == "print" || idVal == "printi")
 			{
-					cout << "DEBUG : It is print Function,checking params" << endl;
 					list<EType> decleration = list<EType>();
 					idVal == "print" ? decleration.push_back(E_STRING) : decleration.push_back(E_INTEGER);
 
@@ -1819,32 +1781,25 @@ yyreduce:
 						errorPrototypeMismatch(yylineno,idVal,v);
 						exit(1);
 					}
-					cout << "DEBUG : print Function param as expected" << endl;
 				(yyval) = new CallNode((IdNode*)(yyvsp[-4]),E_VOID);
 			}
 			else{
-				cout << "DEBUG : OPA in " << idVal<<endl;
-				cout << "DEBUG : " <<data.params->size()<<endl;
 			
 				if(checkFuncArgs(data.params,((ExpListNode*)(yyvsp[-1]))->params) == false )
 				{
-						cout << "DEBUG : OPA1" << endl;
 						errorPrototypeMismatch(yylineno,idVal,*(ListToVector(data.params)));
 						exit(1);
 						
 				}
-				cout << "DEBUG : OPA2" << endl;
 				(yyval) = new CallNode((IdNode*)(yyvsp[-4]),data.retType);
 			}
-			cout << "DEBUG : Finishing Call Function" << endl;
-
 	
 		}
-#line 1844 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1799 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 52:
-#line 402 "parser.ypp" /* yacc.c:1646  */
+#line 375 "parser.ypp" /* yacc.c:1646  */
     {
 			string idVal = ((IdNode*)(yyvsp[-3]))->id;
 			elementData data = get_exists_element(idVal);
@@ -1856,11 +1811,11 @@ yyreduce:
 			}
 			(yyval) = new CallNode((IdNode*)(yyvsp[-3]),data.retType);
 		}
-#line 1860 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1815 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 53:
-#line 415 "parser.ypp" /* yacc.c:1646  */
+#line 388 "parser.ypp" /* yacc.c:1646  */
     {
 		
 		string idVal = ((IdNode*)(yyvsp[(-1) - (0)]))->id;
@@ -1880,61 +1835,54 @@ yyreduce:
 		}
 
 	}
-#line 1884 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1839 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 54:
-#line 436 "parser.ypp" /* yacc.c:1646  */
+#line 409 "parser.ypp" /* yacc.c:1646  */
     {
-			cout << "DEBUG : blke hon" << endl;
 			(yyval) = (yyvsp[0]);
 			(((ExpListNode*)(yyval))->params)->push_front((ExpNode*)(yyvsp[-2]));
-			cout << "DEBUG : next exp is" << ((ExpNode*)(yyvsp[-2]))->expType << endl;
 		}
-#line 1895 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1848 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 55:
-#line 443 "parser.ypp" /* yacc.c:1646  */
+#line 414 "parser.ypp" /* yacc.c:1646  */
     {
-			cout << "DEBUG : aw hon" << ((ExpNode*)(yyvsp[0]))->expType << endl;
 			(yyval) = new ExpListNode();
 			(((ExpListNode*)(yyval))->params)->push_front((ExpNode*)(yyvsp[0]));
-			cout << "DEBUG : first exp is" << ((ExpNode*)(yyvsp[0]))->expType << endl;
 		}
-#line 1906 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1857 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 56:
-#line 450 "parser.ypp" /* yacc.c:1646  */
+#line 419 "parser.ypp" /* yacc.c:1646  */
     {(yyval) = new TypeNode(E_INTEGER);}
-#line 1912 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1863 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 57:
-#line 451 "parser.ypp" /* yacc.c:1646  */
+#line 420 "parser.ypp" /* yacc.c:1646  */
     {(yyval) = new TypeNode(E_BYTE);}
-#line 1918 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1869 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 58:
-#line 452 "parser.ypp" /* yacc.c:1646  */
+#line 421 "parser.ypp" /* yacc.c:1646  */
     {(yyval) = new TypeNode(E_BOOLEAN);}
-#line 1924 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1875 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 59:
-#line 454 "parser.ypp" /* yacc.c:1646  */
+#line 423 "parser.ypp" /* yacc.c:1646  */
     { (yyval) = (yyvsp[-1]); }
-#line 1930 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1881 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 60:
-#line 457 "parser.ypp" /* yacc.c:1646  */
+#line 426 "parser.ypp" /* yacc.c:1646  */
     { 
-			cout << "DEBUG : Binop exp started " << endl;
-			
-			
 			if((((ExpNode*)(yyvsp[-2])))->expType != E_INTEGER && (((ExpNode*)(yyvsp[-2])))->expType != E_BYTE)
 			{
 				errorMismatch(yylineno);
@@ -1953,29 +1901,26 @@ yyreduce:
 			else
 				((ExpNode*)(yyval))->expType = ((ExpNode*)(yyvsp[-2]))->expType;
 			
-			cout << "DEBUG : Binop exp finished" << endl;
 
 		}
-#line 1960 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1907 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 61:
-#line 484 "parser.ypp" /* yacc.c:1646  */
+#line 449 "parser.ypp" /* yacc.c:1646  */
     {
-			cout << "DEBUG : ID exp started" << endl;
 			if(isExist(((IdNode*)(yyvsp[0]))->id) == false || get_exists_element(((IdNode*)(yyvsp[0]))->id).type == E_FUNC){
 						errorUndef(yylineno,((IdNode*)(yyvsp[0]))->id);
 						exit(1);
 			}
 				
 			(yyval) = new IdExpNode((IdNode*)(yyvsp[0]),get_exists_element(((IdNode*)(yyvsp[0]))->id).type); 
-			cout << "DEBUG : ID exp finished" << endl;
 		}
-#line 1975 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1920 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 62:
-#line 495 "parser.ypp" /* yacc.c:1646  */
+#line 458 "parser.ypp" /* yacc.c:1646  */
     {
 			if(((CallNode*)(yyvsp[0]))->callType == E_VOID){
 				errorMismatch(yylineno);
@@ -1984,26 +1929,22 @@ yyreduce:
 			// Get funcDecl by Id and Check RetType of FuncDecl
 			((ExpNode*)(yyval))->expType = ((CallNode*)(yyvsp[0]))->callType;
 		}
-#line 1988 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1933 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 63:
-#line 504 "parser.ypp" /* yacc.c:1646  */
+#line 467 "parser.ypp" /* yacc.c:1646  */
     { 
-			cout << "DEBUG : NUM exp started" << endl;
 			
 			(yyval) = new NumExpNode((NumNode*)(yyvsp[0])); 
-			
-			cout << "DEBUG : NUM exp finished" << endl;
 
 		}
-#line 2001 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1943 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 64:
-#line 514 "parser.ypp" /* yacc.c:1646  */
+#line 474 "parser.ypp" /* yacc.c:1646  */
     {
-			cout << "DEBUG : NUM B exp started" << endl;
 
 			if(((NumNode*)(yyvsp[-1]))->num > 255){
 				string str = "" + ((NumNode*)(yyvsp[-1]))->num;
@@ -2012,36 +1953,33 @@ yyreduce:
 			}
 			(yyval) = new NumBExpNode((NumNode*)(yyvsp[-1])); 
 			
-			cout << "DEBUG : NUM B exp finished" << endl;
 
 		}
-#line 2019 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1959 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 65:
-#line 529 "parser.ypp" /* yacc.c:1646  */
+#line 487 "parser.ypp" /* yacc.c:1646  */
     {
-			cout << "DEBUG : String exp started" << endl;
 			(yyval) = new StringExpNode((StringNode*)(yyvsp[0])); 
-			cout << "DEBUG : String exp finished" << endl;
 		}
-#line 2029 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1967 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 66:
-#line 536 "parser.ypp" /* yacc.c:1646  */
+#line 492 "parser.ypp" /* yacc.c:1646  */
     {(yyval) = new BoolExpNode((BoolNode*)(yyvsp[0]));}
-#line 2035 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1973 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 67:
-#line 537 "parser.ypp" /* yacc.c:1646  */
+#line 493 "parser.ypp" /* yacc.c:1646  */
     {(yyval) = new BoolExpNode((BoolNode*)(yyvsp[0]));}
-#line 2041 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1979 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 68:
-#line 539 "parser.ypp" /* yacc.c:1646  */
+#line 495 "parser.ypp" /* yacc.c:1646  */
     {
 			if((((ExpNode*)(yyvsp[0])))->expType != E_BOOLEAN){
 				errorMismatch(yylineno);
@@ -2049,11 +1987,11 @@ yyreduce:
 			 }
 			(yyval) = new NotExpNode(((ExpNode*)(yyvsp[0])));
 		}
-#line 2053 "parser.tab.cpp" /* yacc.c:1646  */
+#line 1991 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 69:
-#line 547 "parser.ypp" /* yacc.c:1646  */
+#line 503 "parser.ypp" /* yacc.c:1646  */
     {
 			if(((ExpNode*)(yyvsp[-2]))->expType != E_BOOLEAN || ((ExpNode*)(yyvsp[0]))->expType != E_BOOLEAN ){
 				errorMismatch(yylineno);
@@ -2061,11 +1999,11 @@ yyreduce:
 			 }
 			 (yyval) = new ExpNode(E_BOOLEAN);
 		}
-#line 2065 "parser.tab.cpp" /* yacc.c:1646  */
+#line 2003 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 70:
-#line 555 "parser.ypp" /* yacc.c:1646  */
+#line 511 "parser.ypp" /* yacc.c:1646  */
     {
 			if(((ExpNode*)(yyvsp[-2]))->expType != E_BOOLEAN || ((ExpNode*)(yyvsp[0]))->expType != E_BOOLEAN ){
 				errorMismatch(yylineno);
@@ -2073,11 +2011,11 @@ yyreduce:
 			 }
 			 (yyval) = new ExpNode(E_BOOLEAN);
 		}
-#line 2077 "parser.tab.cpp" /* yacc.c:1646  */
+#line 2015 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 71:
-#line 563 "parser.ypp" /* yacc.c:1646  */
+#line 519 "parser.ypp" /* yacc.c:1646  */
     {
 			if(((ExpNode*)(yyvsp[-2]))->expType != E_INTEGER && ((ExpNode*)(yyvsp[-2]))->expType != E_BYTE ){
 				errorMismatch(yylineno);
@@ -2089,11 +2027,11 @@ yyreduce:
 			 }
 			 (yyval) = new ExpNode(E_BOOLEAN);
 		}
-#line 2093 "parser.tab.cpp" /* yacc.c:1646  */
+#line 2031 "parser.tab.cpp" /* yacc.c:1646  */
     break;
 
 
-#line 2097 "parser.tab.cpp" /* yacc.c:1646  */
+#line 2035 "parser.tab.cpp" /* yacc.c:1646  */
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires
@@ -2321,12 +2259,11 @@ yyreturn:
 #endif
   return yyresult;
 }
-#line 574 "parser.ypp" /* yacc.c:1906  */
+#line 530 "parser.ypp" /* yacc.c:1906  */
 
 
 int main()
 {
-	cout << "DEBUG : Entering Main" << endl;
 	int result = yyparse();
 	return result ; 
 }
@@ -2340,7 +2277,6 @@ int yyerror(string message)
 bool isLegalAssignment(EType fromType , EType toType)
 {
 	if((fromType == E_UNDEFINED) || (toType == E_UNDEFINED) ) {
-		std::cout << "DEBUG : error in isLegalAssignment " << std::endl;
 		exit(1);
 	}
 	if(fromType == toType)
@@ -2377,24 +2313,17 @@ std::vector<string>* ListToVector(const list<FormalDeclNode*>*  list )
 bool isExist(string elementId)
 {
 	
-	bool founded = false;
-	cout << "DEBUG : element id: " << elementId <<endl;
-	cout << "DEBUG : current exist elements are : "  <<endl;
-	cout << "DEBUG : ------------------------------------------------------ " <<endl;
 	list<list<elementData> >::const_iterator end = vartable.end();
 	for(list<list<elementData> >::const_iterator element = vartable.begin()  ; element!=end ;  element++ )
 	{
 		list<elementData>::const_iterator lend = (*element).end();
 		for(list<elementData>::const_iterator lentry = (*element).begin()  ; lentry != lend ; lentry++)
 		{
-			cout<< "DEBUG : " << (*lentry).id << endl;
 			if((*lentry).id == elementId ) 
-				founded = true;
+				return true;
 		}
 	}
-	cout << "DEBUG : ------------------------------------------------------ " <<endl;
-
-	return founded;
+	return false;
 }
 elementData get_exists_element(string elementId){
 	
@@ -2412,17 +2341,13 @@ elementData get_exists_element(string elementId){
 
 bool checkFuncArgs(list<FormalDeclNode*>* decleration,list<ExpNode*>* callparams){
 
-	cout << "DEBUG : checking args" << endl;
 	
 	if(decleration->size() != callparams->size()) return false;
-	cout << "DEBUG : checking args1" << endl;
 	list<ExpNode*>::const_iterator element2 = callparams->begin();
-	cout << "DEBUG : checking args2" << endl;
 	for(list<FormalDeclNode*>::const_iterator element = decleration->begin()  ; element!=decleration->end() ;  ++element ,++element2)
 	{	
 		if(!isLegalAssignment((*element2)->expType,(*element)->type)) return false;
 	}
-	cout << "DEBUG : checking args3" << endl;
 	return true;
 }
 
@@ -2460,7 +2385,7 @@ void RemoveScope(){
 		if(var.type == E_FUNC){
 			
 			if(donePrintingPrintFuncs == false){
-				cout << "print (STRING)->VOID 0" << endl; //TODO: Is this DEBUG ???
+				cout << "print (STRING)->VOID 0" << endl; 
 				cout << "printi (INT)->VOID 0" << endl;
 				donePrintingPrintFuncs = true;
 			}
@@ -2486,7 +2411,6 @@ void RemoveScope(){
 }
 
 int insertElement(elementData& element){
-	cout << "DEBUG : inside insert element" << endl;
 	if(isExist(element.id)){
 		return -1;
 	}

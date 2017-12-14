@@ -94,35 +94,28 @@
 
 Prog : {vartable =list<list<elementData> >(); offsets =stack<int>(); AddScope();  } Funcs 
 	{
-		cout << "DEBUG : Entering Prog " << endl;
 		if(mainFuncsCounter != 1)
 		{
 			errorMainMissing();
 			exit(1);
 		}
-		cout << "DEBUG : Finishing Prog " << endl;
 		RemoveScope();
 	}
 	
 Funcs 
 	: 
 	{
-		cout << "DEBUG : Entering Empty Funcs " << endl;
 		$$ = new FuncsListNode(); 
-		cout << "DEBUG : Finishing Empty Funcs " << endl;
 
 		}
 	| FuncDecl Funcs 
 	{
-		cout << "DEBUG : Entering FuncDecl Funcs " << endl;
 		$$ = ((FuncsListNode*)$2);
 		((FuncsListNode*)$$)->funcsList->push_front((FuncNode*)$1);
-		cout << "DEBUG : Finishing FuncDecl Funcs " << endl;
 	} 
 
 FuncDecl : RetType ID
 		{
-			cout << "DEBUG : Entering FuncDecl : checking function " << endl;
 			string idVal = ((IdNode*)$2)->id;
 
 			if(isExist(idVal))
@@ -130,7 +123,6 @@ FuncDecl : RetType ID
 				errorDef(yylineno,idVal);
 				exit(1);
 			}
-			cout << "DEBUG : element doesn't exist" << endl;
 			elementData data = 
 			{
 				idVal,
@@ -144,16 +136,13 @@ FuncDecl : RetType ID
 				exit(1);
 			}
 			offsets.top()--;
-			cout << "DEBUG : element successfully inserted : " << idVal << endl;
 			AddScope();
 			currentRetType = ((TypeNode*)$1)->type;
 			nextParamOffset = 0;
-			cout << "DEBUG : Finishing FuncDecl : checking function" << endl;
 		} 
 		LPAREN Formals RPAREN 
 		{
 			string idVal = ((IdNode*)$2)->id;
-			cout <<"DEBUG BUG : " << idVal << "size issssssssssss " << ((FormalsNode*)$5)->formalsListNode->formalDecls->size() << std::endl;
 			elementData data = 
 			{
 				idVal,
@@ -195,7 +184,6 @@ Formals : FormalsList
 FormalsList : {nextParamOffset--;} FormalDecl FormalsTail
 			{ 		
 				$$ = ((FormalsListNode*)$3);
-				cout << "DEBUG : DO WE GET HERE ?" << endl;
 				((FormalsListNode*)$$)->formalDecls->push_front((FormalDeclNode*)$2);
 				elementData data = 
 				{
@@ -231,7 +219,6 @@ Statement : LBRACE { AddScope(); } Statements RBRACE { RemoveScope(); }
 
 		| Type ID SC 
 			{ 	
-				cout << "DEBUG : Entering type decleration" << endl;
 				elementData data = 
 				{
 					((IdNode*)$2)->id,
@@ -244,7 +231,6 @@ Statement : LBRACE { AddScope(); } Statements RBRACE { RemoveScope(); }
 					errorDef(yylineno,((IdNode*)$2)->id);
 					exit(1);
 				}
-				cout << "DEBUG : Finishing type decleration" << endl;
 			}
 			
 		| Type ID ASSIGN Exp SC 
@@ -298,14 +284,12 @@ Statement : LBRACE { AddScope(); } Statements RBRACE { RemoveScope(); }
 			}
 		| IF LPAREN Exp 
 			{
-				cout << "DEBUG : Checking if If statement expression is boolean" << endl;
 				statementStarted = true;
 				if(((ExpNode*)$3)->expType != E_BOOLEAN)
 				{
 					errorMismatch(yylineno);
 					exit(1);
 				}
-				cout << "DEBUG : Finished Checking if If statement expression is boolean" << endl;
 			} RPAREN { AddScope(); } Statement { RemoveScope(); } IfContinue
 		| WHILE LPAREN Exp 
 			{
@@ -328,8 +312,6 @@ Statement : LBRACE { AddScope(); } Statements RBRACE { RemoveScope(); }
 			{
 				if(switchesNumber == 0 && whilesNum == 0)
 				{
-					cout << "DEBUG : switchesNumber " << switchesNumber << endl;
-					cout << "DEBUG : whilesNum " << whilesNum << endl;
 					errorUnexpectedBreak(yylineno);
 					exit(1);
 				}
@@ -343,7 +325,7 @@ Statement : LBRACE { AddScope(); } Statements RBRACE { RemoveScope(); }
 					exit(1);
 				}
 			}
-			RPAREN LBRACE {AddScope(); switchesNumber++ ;cout << "DEBUG : switch started" << endl;} CaseList RBRACE {RemoveScope(); switchesNumber--; cout << "DEBUG : switch ended" << endl;} SC
+			RPAREN LBRACE {AddScope(); switchesNumber++ ;} CaseList RBRACE {RemoveScope(); switchesNumber--; } SC
 		
 IfContinue: {}
 		| ELSE { AddScope(); } Statement { RemoveScope(); }
@@ -351,22 +333,20 @@ IfContinue: {}
 CaseList : CaseDec CaseList
 		| CaseDec
 
-CaseDec : CASE  NUM COLON Statements {cout << "DEBUG : case num finished" << endl;}
+CaseDec : CASE  NUM COLON Statements 
 		| CASE NUM B COLON Statements
-		| DEFAULT COLON Statements {cout << "DEBUG : default finished" << endl;}
+		| DEFAULT COLON Statements 
 		| CASE NUM COLON
 		| CASE NUM B COLON
-		| DEFAULT COLON {cout << "DEBUG : default finished" << endl;}
+		| DEFAULT COLON 
 	
 Call : ID LPAREN CheckFunc ExpList RPAREN
 		{
-			cout << "DEBUG : Entering Call Function" << endl;
 			
 			string idVal = ((IdNode*)$1)->id;
 			elementData data = get_exists_element(idVal);
 			if(idVal == "print" || idVal == "printi")
 			{
-					cout << "DEBUG : It is print Function,checking params" << endl;
 					list<EType> decleration = list<EType>();
 					idVal == "print" ? decleration.push_back(E_STRING) : decleration.push_back(E_INTEGER);
 
@@ -377,25 +357,18 @@ Call : ID LPAREN CheckFunc ExpList RPAREN
 						errorPrototypeMismatch(yylineno,idVal,v);
 						exit(1);
 					}
-					cout << "DEBUG : print Function param as expected" << endl;
 				$$ = new CallNode((IdNode*)$1,E_VOID);
 			}
 			else{
-				cout << "DEBUG : OPA in " << idVal<<endl;
-				cout << "DEBUG : " <<data.params->size()<<endl;
 			
 				if(checkFuncArgs(data.params,((ExpListNode*)$4)->params) == false )
 				{
-						cout << "DEBUG : OPA1" << endl;
 						errorPrototypeMismatch(yylineno,idVal,*(ListToVector(data.params)));
 						exit(1);
 						
 				}
-				cout << "DEBUG : OPA2" << endl;
 				$$ = new CallNode((IdNode*)$1,data.retType);
 			}
-			cout << "DEBUG : Finishing Call Function" << endl;
-
 	
 		}
 	| ID LPAREN CheckFunc RPAREN
@@ -434,17 +407,13 @@ CheckFunc :
 
 ExpList: Exp COMMA ExpList  
 		{
-			cout << "DEBUG : blke hon" << endl;
 			$$ = $3;
 			(((ExpListNode*)$$)->params)->push_front((ExpNode*)$1);
-			cout << "DEBUG : next exp is" << ((ExpNode*)$1)->expType << endl;
 		}
 		|Exp
 		{
-			cout << "DEBUG : aw hon" << ((ExpNode*)$1)->expType << endl;
 			$$ = new ExpListNode();
 			(((ExpListNode*)$$)->params)->push_front((ExpNode*)$1);
-			cout << "DEBUG : first exp is" << ((ExpNode*)$1)->expType << endl;
 		};
 		
 Type 	: 	INT 	{$$ = new TypeNode(E_INTEGER);} 
@@ -455,9 +424,6 @@ Exp : LPAREN Exp RPAREN { $$ = $2; }
 		
 	| Exp BINOP Exp 
 		{ 
-			cout << "DEBUG : Binop exp started " << endl;
-			
-			
 			if((((ExpNode*)$1))->expType != E_INTEGER && (((ExpNode*)$1))->expType != E_BYTE)
 			{
 				errorMismatch(yylineno);
@@ -476,20 +442,17 @@ Exp : LPAREN Exp RPAREN { $$ = $2; }
 			else
 				((ExpNode*)$$)->expType = ((ExpNode*)$1)->expType;
 			
-			cout << "DEBUG : Binop exp finished" << endl;
 
 		}
 		
 	| ID 
 		{
-			cout << "DEBUG : ID exp started" << endl;
 			if(isExist(((IdNode*)$1)->id) == false || get_exists_element(((IdNode*)$1)->id).type == E_FUNC){
 						errorUndef(yylineno,((IdNode*)$1)->id);
 						exit(1);
 			}
 				
 			$$ = new IdExpNode((IdNode*)$1,get_exists_element(((IdNode*)$1)->id).type); 
-			cout << "DEBUG : ID exp finished" << endl;
 		}
 	| Call  
 		{
@@ -502,17 +465,13 @@ Exp : LPAREN Exp RPAREN { $$ = $2; }
 		}
 	| NUM 
 		{ 
-			cout << "DEBUG : NUM exp started" << endl;
 			
 			$$ = new NumExpNode((NumNode*)$1); 
-			
-			cout << "DEBUG : NUM exp finished" << endl;
 
 		}
 		
 	| NUM B 
 		{
-			cout << "DEBUG : NUM B exp started" << endl;
 
 			if(((NumNode*)$1)->num > 255){
 				string str = "" + ((NumNode*)$1)->num;
@@ -521,15 +480,12 @@ Exp : LPAREN Exp RPAREN { $$ = $2; }
 			}
 			$$ = new NumBExpNode((NumNode*)$1); 
 			
-			cout << "DEBUG : NUM B exp finished" << endl;
 
 		}
 
 	| STRING 
 		{
-			cout << "DEBUG : String exp started" << endl;
 			$$ = new StringExpNode((StringNode*)$1); 
-			cout << "DEBUG : String exp finished" << endl;
 		}
 		
 		
@@ -575,7 +531,6 @@ Exp : LPAREN Exp RPAREN { $$ = $2; }
 
 int main()
 {
-	cout << "DEBUG : Entering Main" << endl;
 	int result = yyparse();
 	return result ; 
 }
@@ -589,7 +544,6 @@ int yyerror(string message)
 bool isLegalAssignment(EType fromType , EType toType)
 {
 	if((fromType == E_UNDEFINED) || (toType == E_UNDEFINED) ) {
-		std::cout << "DEBUG : error in isLegalAssignment " << std::endl;
 		exit(1);
 	}
 	if(fromType == toType)
@@ -626,24 +580,17 @@ std::vector<string>* ListToVector(const list<FormalDeclNode*>*  list )
 bool isExist(string elementId)
 {
 	
-	bool founded = false;
-	cout << "DEBUG : element id: " << elementId <<endl;
-	cout << "DEBUG : current exist elements are : "  <<endl;
-	cout << "DEBUG : ------------------------------------------------------ " <<endl;
 	list<list<elementData> >::const_iterator end = vartable.end();
 	for(list<list<elementData> >::const_iterator element = vartable.begin()  ; element!=end ;  element++ )
 	{
 		list<elementData>::const_iterator lend = (*element).end();
 		for(list<elementData>::const_iterator lentry = (*element).begin()  ; lentry != lend ; lentry++)
 		{
-			cout<< "DEBUG : " << (*lentry).id << endl;
 			if((*lentry).id == elementId ) 
-				founded = true;
+				return true;
 		}
 	}
-	cout << "DEBUG : ------------------------------------------------------ " <<endl;
-
-	return founded;
+	return false;
 }
 elementData get_exists_element(string elementId){
 	
@@ -661,17 +608,13 @@ elementData get_exists_element(string elementId){
 
 bool checkFuncArgs(list<FormalDeclNode*>* decleration,list<ExpNode*>* callparams){
 
-	cout << "DEBUG : checking args" << endl;
 	
 	if(decleration->size() != callparams->size()) return false;
-	cout << "DEBUG : checking args1" << endl;
 	list<ExpNode*>::const_iterator element2 = callparams->begin();
-	cout << "DEBUG : checking args2" << endl;
 	for(list<FormalDeclNode*>::const_iterator element = decleration->begin()  ; element!=decleration->end() ;  ++element ,++element2)
 	{	
 		if(!isLegalAssignment((*element2)->expType,(*element)->type)) return false;
 	}
-	cout << "DEBUG : checking args3" << endl;
 	return true;
 }
 
@@ -709,7 +652,7 @@ void RemoveScope(){
 		if(var.type == E_FUNC){
 			
 			if(donePrintingPrintFuncs == false){
-				cout << "print (STRING)->VOID 0" << endl; //TODO: Is this DEBUG ???
+				cout << "print (STRING)->VOID 0" << endl; 
 				cout << "printi (INT)->VOID 0" << endl;
 				donePrintingPrintFuncs = true;
 			}
@@ -735,7 +678,6 @@ void RemoveScope(){
 }
 
 int insertElement(elementData& element){
-	cout << "DEBUG : inside insert element" << endl;
 	if(isExist(element.id)){
 		return -1;
 	}
