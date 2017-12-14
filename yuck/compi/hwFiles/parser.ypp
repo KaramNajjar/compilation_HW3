@@ -40,8 +40,8 @@
 	stack<int> offsets;
 	static bool expListExist = false;
 	static bool statementStarted = false;
-	static bool insideSwitch = false;
-	static bool insideWhile = false;
+	static int switchesNumber = 0;
+	static int whilesNum = 0;
 	static int mainFuncsCounter = 0;
 	static int nextParamOffset =0;
 	static EType currentRetType = E_UNDEFINED;
@@ -289,7 +289,7 @@ Statement : LBRACE { AddScope(); } Statements RBRACE { RemoveScope(); }
 			}
 		| RETURN Exp SC
 			{
-				if(((ExpNode*)$2)->expType != currentRetType)
+				if(isLegalAssignment(((ExpNode*)$2)->expType,currentRetType) == false)
 				{
 					errorMismatch(yylineno);
 					exit(1);
@@ -310,7 +310,7 @@ Statement : LBRACE { AddScope(); } Statements RBRACE { RemoveScope(); }
 		| WHILE LPAREN Exp 
 			{
 				statementStarted = true;
-				insideWhile = true;
+				whilesNum++;
 				if(((ExpNode*)$3)->expType != E_BOOLEAN)
 				{
 					errorMismatch(yylineno);
@@ -322,12 +322,14 @@ Statement : LBRACE { AddScope(); } Statements RBRACE { RemoveScope(); }
 			{ 
 				RemoveScope(); 
 				statementStarted = false;
-				insideWhile = false;
+				whilesNum--;
 			}
 		| BREAK SC 
 			{
-				if(insideSwitch == false && insideWhile == false)
+				if(switchesNumber == 0 && whilesNum == 0)
 				{
+					cout << "DEBUG : switchesNumber " << switchesNumber << endl;
+					cout << "DEBUG : whilesNum " << whilesNum << endl;
 					errorUnexpectedBreak(yylineno);
 					exit(1);
 				}
@@ -341,7 +343,7 @@ Statement : LBRACE { AddScope(); } Statements RBRACE { RemoveScope(); }
 					exit(1);
 				}
 			}
-			RPAREN LBRACE {AddScope(); insideSwitch = true;} CaseList RBRACE {RemoveScope();insideSwitch = false;} SC
+			RPAREN LBRACE {AddScope(); switchesNumber++ ;cout << "DEBUG : switch started" << endl;} CaseList RBRACE {RemoveScope(); switchesNumber--; cout << "DEBUG : switch ended" << endl;} SC
 		
 IfContinue: {}
 		| ELSE { AddScope(); } Statement { RemoveScope(); }
@@ -349,12 +351,12 @@ IfContinue: {}
 CaseList : CaseDec CaseList
 		| CaseDec
 
-CaseDec : CASE NUM COLON Statement
-		| CASE NUM B COLON Statement
-		| DEFAULT COLON Statement
+CaseDec : CASE  NUM COLON Statements {cout << "DEBUG : case num finished" << endl;}
+		| CASE NUM B COLON Statements
+		| DEFAULT COLON Statements {cout << "DEBUG : default finished" << endl;}
 		| CASE NUM COLON
 		| CASE NUM B COLON
-		| DEFAULT COLON
+		| DEFAULT COLON {cout << "DEBUG : default finished" << endl;}
 	
 Call : ID LPAREN CheckFunc ExpList RPAREN
 		{
@@ -432,13 +434,17 @@ CheckFunc :
 
 ExpList: Exp COMMA ExpList  
 		{
-			$$ = $2;
+			cout << "DEBUG : blke hon" << endl;
+			$$ = $3;
 			(((ExpListNode*)$$)->params)->push_front((ExpNode*)$1);
-		};
+			cout << "DEBUG : next exp is" << ((ExpNode*)$1)->expType << endl;
+		}
 		|Exp
 		{
+			cout << "DEBUG : aw hon" << ((ExpNode*)$1)->expType << endl;
 			$$ = new ExpListNode();
 			(((ExpListNode*)$$)->params)->push_front((ExpNode*)$1);
+			cout << "DEBUG : first exp is" << ((ExpNode*)$1)->expType << endl;
 		};
 		
 Type 	: 	INT 	{$$ = new TypeNode(E_INTEGER);} 
@@ -457,14 +463,18 @@ Exp : LPAREN Exp RPAREN { $$ = $2; }
 				errorMismatch(yylineno);
 				exit(1);
 			}
-			if((((ExpNode*)$1))->expType != (((ExpNode*)$3))->expType)
+			if((((ExpNode*)$3))->expType != E_INTEGER && (((ExpNode*)$3))->expType != E_BYTE)
 			{
 				errorMismatch(yylineno);
 				exit(1);
 			}
 			
 			$$ = new BinExpNode(((ExpNode*)$1),(BinOpNode*)$2,((ExpNode*)$3)); 
-			((ExpNode*)$$)->expType = (((ExpNode*)$1))->expType;
+			
+			if(((ExpNode*)$3)->expType != ((ExpNode*)$1)->expType) 
+				((ExpNode*)$$)->expType = E_INTEGER;
+			else
+				((ExpNode*)$$)->expType = ((ExpNode*)$1)->expType;
 			
 			cout << "DEBUG : Binop exp finished" << endl;
 

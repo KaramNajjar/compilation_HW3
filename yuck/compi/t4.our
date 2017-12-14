@@ -14,4 +14,77 @@ c BYTE 1
 ---end scope---
 ---end scope---
 ---end scope---
-line 20: type mismatch
+---end scope---
+---end scope---
+dividee INT -1
+divider INT -2
+xxx INT 0
+forfun INT 1
+k BOOL 2
+---end scope---
+---end scope---
+---end scope---
+---end scope---
+---end scope---
+x INT -1
+y INT -2
+lll INT 0
+---end scope---
+---end scope---
+---end scope---
+---end scope---
+x INT -1
+y INT -2
+---end scope---
+---end scope---
+---end scope---
+---end scope---
+a2 INT 4
+b2 INT 5
+c2 INT 6
+d2 INT 7
+---end scope---
+---end scope---
+---end scope---
+---end scope---
+---end scope---
+---end scope---
+---end scope---
+a1 BOOL 0
+b1 INT 1
+c1 BOOL 2
+d1 BYTE 3
+x1 INT 4
+y1 BOOL 5
+z1 INT 6
+big1 BYTE 7
+---end scope---
+---end scope---
+---end scope---
+home BYTE 0
+---end scope---
+variable INT -1
+---end scope---
+num INT 7
+num2 INT 8
+w INT 9
+---end scope---
+---end scope---
+x INT 0
+y INT 1
+z INT 2
+xxx BOOL 3
+c BOOL 4
+big BYTE 5
+big2 BYTE 6
+---end scope---
+print (STRING)->VOID 0
+printi (INT)->VOID 0
+yyy (INT)->INT 0
+swap (INT,INT)->VOID 0
+mod (INT,INT)->INT 0
+gcd (INT,INT)->INT 0
+gcd2 (INT,INT)->INT 0
+scopes ()->BYTE 0
+f (INT)->INT 0
+main ()->VOID 0

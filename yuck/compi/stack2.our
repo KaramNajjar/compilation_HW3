@@ -16,4 +16,21 @@ f4 INT 5
 e3 INT 3
 e4 BOOL 4
 ---end scope---
-line 22: unexpected break statement
+---end scope---
+e3 INT 3
+---end scope---
+---end scope---
+an1 INT -1
+an2 BYTE -2
+an3 BOOL -3
+an4 INT -4
+b0 INT 0
+b1 BOOL 1
+b2 INT 2
+---end scope---
+x INT 0
+---end scope---
+print (STRING)->VOID 0
+printi (INT)->VOID 0
+f (INT,BYTE,BOOL,INT)->INT 0
+main ()->VOID 0

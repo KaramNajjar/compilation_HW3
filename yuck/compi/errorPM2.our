@@ -6,3 +6,4 @@ bool2 BOOL -3
 x INT -1
 ---end scope---
 ---end scope---
+line 21: prototype mismatch, function f expects arguments (INT)
