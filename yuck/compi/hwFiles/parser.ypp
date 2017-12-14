@@ -12,12 +12,13 @@
 	using namespace std;
 	using namespace output;
 
-	typedef struct {
+	typedef struct{
 		string id;
 		EType type;
 		int offset;
 		list<FormalDeclNode*>* params;  // only used for functions
 		EType retType; 		// only used for functions
+		
 	}elementData;
 	
 	//Functions Declerations
@@ -31,7 +32,7 @@
 	bool checkFuncArgs2(list<EType> decleration,list<ExpNode*>* callparams);
 	std::vector<string>* ListToVector(const list<FormalDeclNode*>* list);
 	bool isExist(string elementName);
-	elementData get_exists_element(string elementName);
+	const elementData* get_exists_element(string elementName);
 	int insertElement(elementData& element);
 	bool updateFuncParams(elementData& data);
 	
@@ -254,11 +255,11 @@ Statement : LBRACE { AddScope(); } Statements RBRACE { RemoveScope(); }
 			}
 		| ID ASSIGN Exp SC
 			{
-				if(isExist(((IdNode*)$1)->id) == false || get_exists_element(((IdNode*)$1)->id).type == E_FUNC){
+				if(isExist(((IdNode*)$1)->id) == false || get_exists_element(((IdNode*)$1)->id)->type == E_FUNC){
 					errorUndef(yylineno,((IdNode*)$1)->id);
 					exit(1);	
 				}
-				if(isLegalAssignment(((ExpNode*)$3)->expType,get_exists_element(((IdNode*)$1)->id).type) == false){
+				if(isLegalAssignment(((ExpNode*)$3)->expType,get_exists_element(((IdNode*)$1)->id)->type) == false){
 					errorMismatch(yylineno);
 					exit(1);
 				}
@@ -344,7 +345,7 @@ Call : ID LPAREN CheckFunc ExpList RPAREN
 		{
 			
 			string idVal = ((IdNode*)$1)->id;
-			elementData data = get_exists_element(idVal);
+			const elementData* data = get_exists_element(idVal);
 			if(idVal == "print" || idVal == "printi")
 			{
 					list<EType> decleration = list<EType>();
@@ -361,27 +362,27 @@ Call : ID LPAREN CheckFunc ExpList RPAREN
 			}
 			else{
 			
-				if(checkFuncArgs(data.params,((ExpListNode*)$4)->params) == false )
+				if(checkFuncArgs(data->params,((ExpListNode*)$4)->params) == false )
 				{
-						errorPrototypeMismatch(yylineno,idVal,*(ListToVector(data.params)));
+						errorPrototypeMismatch(yylineno,idVal,*(ListToVector(data->params)));
 						exit(1);
 						
 				}
-				$$ = new CallNode((IdNode*)$1,data.retType);
+				$$ = new CallNode((IdNode*)$1,data->retType);
 			}
 	
 		}
 	| ID LPAREN CheckFunc RPAREN
 		{
 			string idVal = ((IdNode*)$1)->id;
-			elementData data = get_exists_element(idVal);
+			const elementData* data = get_exists_element(idVal);
 
-			if(data.params->size() != 0)
+			if(data->params->size() != 0)
 			{
-				errorPrototypeMismatch(yylineno,idVal,*(ListToVector(data.params)));
+				errorPrototypeMismatch(yylineno,idVal,*(ListToVector(data->params)));
 				exit(1);
 			}
-			$$ = new CallNode((IdNode*)$1,data.retType);
+			$$ = new CallNode((IdNode*)$1,data->retType);
 		}
 	
 CheckFunc : 
@@ -395,8 +396,8 @@ CheckFunc :
 				errorUndefFunc(yylineno,idVal);
 				exit(1);
 			}
-			elementData data = get_exists_element(idVal);
-			if(data.type != E_FUNC)
+			const elementData* data = get_exists_element(idVal);
+			if(data->type != E_FUNC)
 			{
 				errorUndefFunc(yylineno,idVal);
 				exit(1);
@@ -447,12 +448,12 @@ Exp : LPAREN Exp RPAREN { $$ = $2; }
 		
 	| ID 
 		{
-			if(isExist(((IdNode*)$1)->id) == false || get_exists_element(((IdNode*)$1)->id).type == E_FUNC){
+			if(isExist(((IdNode*)$1)->id) == false || get_exists_element(((IdNode*)$1)->id)->type == E_FUNC){
 						errorUndef(yylineno,((IdNode*)$1)->id);
 						exit(1);
 			}
 				
-			$$ = new IdExpNode((IdNode*)$1,get_exists_element(((IdNode*)$1)->id).type); 
+			$$ = new IdExpNode((IdNode*)$1,get_exists_element(((IdNode*)$1)->id)->type); 
 		}
 	| Call  
 		{
@@ -592,7 +593,7 @@ bool isExist(string elementId)
 	}
 	return false;
 }
-elementData get_exists_element(string elementId){
+const elementData* get_exists_element(string elementId){
 	
 	list<list<elementData> >::const_iterator end = vartable.end();
 	for(list<list<elementData> >::const_iterator element = vartable.begin()  ; element!=end ;  element++ )
@@ -601,7 +602,7 @@ elementData get_exists_element(string elementId){
 		for(list<elementData>::const_iterator elementData = (*element).begin()  ; elementData != lend ; elementData++)
 		{
 			if((*elementData).id == elementId ) 
-				return (*elementData) ;
+				return &(*elementData) ;
 		}
 	}
 }
